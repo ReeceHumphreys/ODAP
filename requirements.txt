@@ -1,0 +1,4 @@
+###### Requirements without Version Specifiers ######
+scipy
+numpy
+skyfield
