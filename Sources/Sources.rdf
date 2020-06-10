@@ -1,0 +1,146 @@
+<rdf:RDF
+ xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+ xmlns:z="http://www.zotero.org/namespaces/export#"
+ xmlns:bib="http://purl.org/net/biblio#"
+ xmlns:foaf="http://xmlns.com/foaf/0.1/"
+ xmlns:link="http://purl.org/rss/1.0/modules/link/"
+ xmlns:dc="http://purl.org/dc/elements/1.1/"
+ xmlns:dcterms="http://purl.org/dc/terms/"
+ xmlns:prism="http://prismstandard.org/namespaces/1.2/basic/">
+    <bib:Thesis rdf:about="#item_1">
+        <z:itemType>thesis</z:itemType>
+        <bib:authors>
+            <rdf:Seq>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>Letizia</foaf:surname>
+                        <foaf:givenName>Francesca</foaf:givenName>
+                    </foaf:Person>
+                </rdf:li>
+            </rdf:Seq>
+        </bib:authors>
+        <link:link rdf:resource="#item_2"/>
+        <link:link rdf:resource="#item_3"/>
+        <dc:title>Space debris cloud evolution in Low Earth Orbit</dc:title>
+        <dcterms:abstract>The Earth is surrounded by inoperative objects generated from past and current space missions. Because of the high orbital speed, even the impact with small fragments is a hazard to operational spacecraft as it could lead to the partial or complete loss of the mission. Therefore, it is important to assess the collision risk due to space debris considering small fragments, which are usually not included in space debris modelling because their large number would make simulations extremely complex. In this work, an analytical approach is developed to describe the evolution of debris clouds created by fragmentations in Low Earth Orbit. In contrast to traditional approaches, which follow the trajectory of individual fragments, with the proposed method the cloud behaviour is studied globally, so that the presence of small fragments can be modelled. This give a deeper insight into the dynamics of debris clouds and reduces the computational effort needed to estimate the consequences of a collision. A standard breakup model is used to describe the dispersion of the fragments in terms of characteristic length, area-to mass ratio and velocity. From the velocity distribution, the fragment spatial dispersion is derived. The cloud density is expressed by a continuous function that depends on the altitude and that is set as initial condition for the orbit propagation. Based on an analytical approach proposed in the literature for interplanetary dust and spacecraft swarms, the fragment cloud evolution in time is derived through the continuity equation, which is used to describe the variation of debris density considering the effect of atmospheric drag. The approach has been extended to express the cloud density as a function of multiple orbital parameters and to model additional perturbations such as the Earth’s oblateness. The method has been validated through the comparison with the traditional numerical propagation and then applied to study many breakup scenarios. The proposed approach proves to be flexible and able to study the collision risk coming from several breakup events and to evaluate the vulnerability of different targets. It is also applied to derive an index of the environmental criticality of spacecraft.</dcterms:abstract>
+        <dc:date>February 16, 2016</dc:date>
+        <z:libraryCatalog>ResearchGate</z:libraryCatalog>
+        <dc:description>DOI: 10.13140/RG.2.1.3817.7047</dc:description>
+    </bib:Thesis>
+    <z:Attachment rdf:about="#item_2">
+        <z:itemType>attachment</z:itemType>
+        <rdf:resource rdf:resource="files/2/Letizia - 2016 - Space debris cloud evolution in Low Earth Orbit.pdf"/>
+        <dc:title>Full Text PDF</dc:title>
+        <dc:identifier>
+            <dcterms:URI>
+                <rdf:value>https://www.researchgate.net/profile/Francesca_Letizia/publication/295490674_Space_debris_cloud_evolution_in_Low_Earth_Orbit/links/56cac31b08ae5488f0d9662b/Space-debris-cloud-evolution-in-Low-Earth-Orbit.pdf</rdf:value>
+            </dcterms:URI>
+        </dc:identifier>
+        <dcterms:dateSubmitted>2020-05-29 20:53:28</dcterms:dateSubmitted>
+        <z:linkMode>1</z:linkMode>
+        <link:type>application/pdf</link:type>
+    </z:Attachment>
+    <z:Attachment rdf:about="#item_3">
+        <z:itemType>attachment</z:itemType>
+        <dc:title>ResearchGate Link</dc:title>
+        <dc:identifier>
+            <dcterms:URI>
+                <rdf:value>https://www.researchgate.net/publication/295490674_Space_debris_cloud_evolution_in_Low_Earth_Orbit</rdf:value>
+            </dcterms:URI>
+        </dc:identifier>
+        <dcterms:dateSubmitted>2020-05-29 20:53:28</dcterms:dateSubmitted>
+        <z:linkMode>3</z:linkMode>
+    </z:Attachment>
+    <bib:Article rdf:about="http://www.sciencedirect.com/science/article/pii/S0273117701004239">
+        <z:itemType>journalArticle</z:itemType>
+        <dcterms:isPartOf rdf:resource="urn:issn:0273-1177"/>
+        <bib:authors>
+            <rdf:Seq>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>Johnson</foaf:surname>
+                        <foaf:givenName>N. L.</foaf:givenName>
+                    </foaf:Person>
+                </rdf:li>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>Krisko</foaf:surname>
+                        <foaf:givenName>P. H.</foaf:givenName>
+                    </foaf:Person>
+                </rdf:li>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>Liou</foaf:surname>
+                        <foaf:givenName>J. -C.</foaf:givenName>
+                    </foaf:Person>
+                </rdf:li>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>Anz-Meador</foaf:surname>
+                        <foaf:givenName>P. D.</foaf:givenName>
+                    </foaf:Person>
+                </rdf:li>
+            </rdf:Seq>
+        </bib:authors>
+        <link:link rdf:resource="#item_5"/>
+        <link:link rdf:resource="#item_6"/>
+        <dc:title>NASA's new breakup model of evolve 4.0</dc:title>
+        <dcterms:abstract>Analyses of the fragmentation (due to explosions and collisions) of spacecraft and rocket bodies in low Earth orbit (LEO) have been performed this year at NASA/JSC. The overall goals of this study have been to achieve a better understanding of the results of fragmentations on the orbital debris environment and then to implement this understanding into the breakup model of EVOLVE 4.0. The previous breakup model implemented in EVOLVE 3.0 and other long-term orbital debris environment models was known to be inadequate in two major areas. First, it treated all fragmentational debris as spheres of a density which varied as a function of fragment diameter, where diameter was directly related to mass. Second, it underestimated the generation of fragments smaller than 10-cm in the majority of explosions. Without reliable data from both ground tests and on-orbit breakups, these inadequacies were unavoidable. Recent years, however, have brought additional data and related analyses: results of three ground tests, better on-orbit size and mass estimation techniques, more regular orbital tracking and reporting, additional radar resources dedicated to the observation of small objects, and simply a longer time period with which to observe the debris and their decay. Together these studies and data are applied to the reanalysis of the breakup model. In this paper we compare the new breakup model to the old breakup model in detail, including the size distributions for explosions and collisions, the area-to-mass and impact velocity assignments and distributions, and the delta-velocity distributions. These comparisons demonstrate a significantly better understanding of the fragmentation process as compared to previous versions of EVOLVE.</dcterms:abstract>
+        <dc:date>January 1, 2001</dc:date>
+        <z:language>en</z:language>
+        <z:libraryCatalog>ScienceDirect</z:libraryCatalog>
+        <dc:identifier>
+            <dcterms:URI>
+                <rdf:value>http://www.sciencedirect.com/science/article/pii/S0273117701004239</rdf:value>
+            </dcterms:URI>
+        </dc:identifier>
+        <dcterms:dateSubmitted>2020-06-09 20:01:44</dcterms:dateSubmitted>
+        <bib:pages>1377-1384</bib:pages>
+    </bib:Article>
+    <bib:Journal rdf:about="urn:issn:0273-1177">
+        <prism:volume>28</prism:volume>
+        <dc:title>Advances in Space Research</dc:title>
+        <dc:identifier>DOI 10.1016/S0273-1177(01)00423-9</dc:identifier>
+        <prism:number>9</prism:number>
+        <dcterms:alternative>Advances in Space Research</dcterms:alternative>
+        <dc:identifier>ISSN 0273-1177</dc:identifier>
+    </bib:Journal>
+    <z:Attachment rdf:about="#item_5">
+        <z:itemType>attachment</z:itemType>
+        <rdf:resource rdf:resource="files/5/S0273117701004239.html"/>
+        <dc:title>ScienceDirect Snapshot</dc:title>
+        <dc:identifier>
+            <dcterms:URI>
+                <rdf:value>https://www.sciencedirect.com/science/article/pii/S0273117701004239</rdf:value>
+            </dcterms:URI>
+        </dc:identifier>
+        <dcterms:dateSubmitted>2020-06-09 20:01:48</dcterms:dateSubmitted>
+        <z:linkMode>1</z:linkMode>
+        <link:type>text/html</link:type>
+    </z:Attachment>
+    <z:Attachment rdf:about="#item_6">
+        <z:itemType>attachment</z:itemType>
+        <rdf:resource rdf:resource="files/6/Johnson et al. - 2001 - NASA's new breakup model of evolve 4.0.pdf"/>
+        <dc:title>Johnson et al. - 2001 - NASA's new breakup model of evolve 4.0.pdf</dc:title>
+        <link:type>application/pdf</link:type>
+    </z:Attachment>
+    <z:Attachment rdf:about="#item_8">
+        <z:itemType>attachment</z:itemType>
+        <rdf:resource rdf:resource="files/8/odqnv15i4.pdf"/>
+        <dc:title>odqnv15i4.pdf</dc:title>
+        <dc:identifier>
+            <dcterms:URI>
+                <rdf:value>https://orbitaldebris.jsc.nasa.gov/quarterly-news/pdfs/odqnv15i4.pdf</rdf:value>
+            </dcterms:URI>
+        </dc:identifier>
+        <dcterms:dateSubmitted>2020-06-09 21:52:35</dcterms:dateSubmitted>
+        <z:linkMode>1</z:linkMode>
+        <link:type>application/pdf</link:type>
+    </z:Attachment>
+    <z:Collection rdf:about="#collection_1">
+        <dc:title>Orbital Debris</dc:title>
+        <dcterms:hasPart rdf:resource="#item_1"/>
+        <dcterms:hasPart rdf:resource="http://www.sciencedirect.com/science/article/pii/S0273117701004239"/>
+        <dcterms:hasPart rdf:resource="#item_8"/>
+    </z:Collection>
+</rdf:RDF>
