@@ -4,3 +4,4 @@ numpy
 skyfield
 jupyter
 matplotlib
+rebound
