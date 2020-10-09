@@ -7,3 +7,6 @@ Leap_Second.dat
 deltat.data
 deltat.preds
 ss.bin
+__pycache__
+generate_debris.pyc
+py3env
