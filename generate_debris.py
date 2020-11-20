@@ -194,13 +194,18 @@ def avg_area(L_c):
 avg_area = np.vectorize(avg_area)
 
 """ ----------------- Num. Fragments ----------------- """
-def number_fragments(l_characteristic, m_target, m_projectile, v_impact, is_catastrophic, debris_type):
+# For collisions only
+def number_fragments(l_characteristic, m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):
 
     # Defining reference Mass
-    m_ref = 0
-    if is_catastrophic: m_ref = m_target + m_projectile
-    else: m_ref = m_projectile * (v_impact)**2
-    return 6*(l_characteristic)**(-1.6)
+    if explosion == True: # Can be multiplied by scaling factor S
+        return 6*(l_characteristic)**(-1.6)
+    else:
+        m_ref = 0
+        if is_catastrophic: m_ref = m_target + m_projectile
+        else: m_ref = m_projectile * (v_impact)**2
+        return 0.1 * (m_ref)**0.75 * l_characteristic**-1.71
+        
 
 """ ----------------- Mean ----------------- """
 def mean_deltaV(kai, explosion):
@@ -251,9 +256,9 @@ def velocity_vectors(N, target_velocity, velocities):
 
 from numpy.random import uniform
 
-def characteristic_lengths(m_target, m_projectile, v_impact, is_catastrophic, debris_type):
+def characteristic_lengths(m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):
     bins = np.geomspace(0.001, 0.1, 100)
-    N_fragments = [number_fragments(b, m_target, m_projectile, v_impact, is_catastrophic, debris_type) / 10**5 for b in bins ]
+    N_fragments = [number_fragments(b, m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion) / 10**5 for b in bins ]
     N_fragments = (np.array(N_fragments) * 1e5).astype(int)
 
     L_c = np.concatenate([uniform(bins[i], bins[i+1], size=N_fragments[i]) for i in range(len(bins) - 1)])
