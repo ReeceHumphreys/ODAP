@@ -193,19 +193,6 @@ def avg_area(L_c):
         return 0.556945 * L_c**2.0047077
 avg_area = np.vectorize(avg_area)
 
-""" ----------------- Num. Fragments ----------------- """
-# For collisions only
-def number_fragments(l_characteristic, m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):
-
-    # Defining reference Mass
-    if explosion == True: # Can be multiplied by scaling factor S
-        return 6*(l_characteristic)**(-1.6)
-    else:
-        m_ref = 0
-        if is_catastrophic: m_ref = m_target + m_projectile
-        else: m_ref = m_projectile * (v_impact)**2
-        return 0.1 * (m_ref)**0.75 * l_characteristic**-1.71
-        
 
 """ ----------------- Mean ----------------- """
 def mean_deltaV(kai, explosion):
@@ -256,11 +243,62 @@ def velocity_vectors(N, target_velocity, velocities):
 
 from numpy.random import uniform
 
-def characteristic_lengths(m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):
-    bins = np.geomspace(0.001, 0.1, 100)
-    N_fragments = [number_fragments(b, m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion) / 10**5 for b in bins ]
-    N_fragments = (np.array(N_fragments) * 1e5).astype(int)
+""" ----------------- Num. Fragments & Char. Length----------------- """
+def number_fragments(l_characteristic, m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):
+    # Defining reference Mass
+    if explosion == True: # Can be multiplied by scaling factor S
+        return 6*(l_characteristic)**(-1.6)
+    else:
+        m_ref = 0
+        if is_catastrophic: m_ref = m_target + m_projectile
+        else: m_ref = m_projectile * (v_impact)**2
+        return 0.1 * (m_ref)**0.75 * l_characteristic**-1.71
+        
 
-    L_c = np.concatenate([uniform(bins[i], bins[i+1], size=N_fragments[i]) for i in range(len(bins) - 1)])
+def characteristic_lengths(m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):
+    
+    
+    bins = np.geomspace(0.001, 1, 100)
+    N_fragments = number_fragments(bins, m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion)
+    N_per_bin = np.array(N_fragments[:-1] - N_fragments[1:]).astype(int)
+    L_c = np.concatenate([uniform(bins[i], bins[i+1], size=N_per_bin[i]) for i in range(len(bins) - 1)])
 
     return L_c
+
+def fragmentation(m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):
+    
+    # Has almost all of the small fragments accounted for but does not conserve mass, need to then generate 2-6 pieces of deb
+    # > 1m such that mass will be conserved
+    prelim_L_c = characteristic_lengths(m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion)
+    
+    prelim_lambda_c = np.log10(prelim_L_c)
+    prelim_areas = avg_area(prelim_L_c)
+    prelim_AM = np.array(distribution_AM(prelim_lambda_c, debris_type))
+    prelim_masses = prelim_areas / 10**prelim_AM
+    
+    unaccounted_mass = m_target - np.sum(prelim_masses)
+    
+    # Currenttly doing CiELO approach of assuming all mass is in 1 big obj > 1m, but NASA spresds it btwn 2 - 6 smaller pieces > 1m
+    
+    # This is a horrible implementation and needs be fixed, but I dont know methods for doing this better. Maybe monte carlo?
+    assumed_masses = np.array([0])
+    assumed_areas = np.array([])
+    assumed_AM = np.array([])
+    assumed_LC = np.array([uniform(1, 15)]) # Pick a random size for the left over deb
+    while np.abs(assumed_masses - unaccounted_mass) > 1:
+        assumed_lam_LC = np.array([np.log10(assumed_LC)])
+        assumed_areas = np.array([avg_area(assumed_LC)])
+        assumed_AM = np.array(distribution_AM(assumed_lam_LC[0], debris_type))
+        assumed_masses = assumed_areas / 10**assumed_AM
+        if assumed_masses < unaccounted_mass:
+            assumed_LC += 0.001 
+        else:
+            assumed_LC -= 0.001
+    
+    L_c = np.concatenate([prelim_L_c, assumed_LC])
+    areas = np.concatenate([prelim_areas, assumed_areas.flatten()])
+    masses = np.concatenate([prelim_masses, assumed_masses.flatten()])
+    AM = np.concatenate([prelim_AM, assumed_AM])
+    
+    return L_c, areas, masses, AM
+    
