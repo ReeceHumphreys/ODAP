@@ -1,12 +1,12 @@
 import numpy as np
-from enum import Enum 
+from enum import IntEnum 
 
-debris_category = Enum('Category', 'rb sc soc')
+debris_category = IntEnum('Category', 'rb sc soc')
 
 
 """ ----------------- Mean ----------------- """
 def make_mean_AM(debris_type):
-
+   
     def RB_mean_AM(lambda_c):
 
         mean_am_1 = np.empty_like(lambda_c)
@@ -49,7 +49,7 @@ def make_mean_AM(debris_type):
 
         mean_am_2.fill(0)
         return np.array([mean_am_1,mean_am_2])
-
+    
     if debris_type == debris_category.rb:
         return RB_mean_AM
     elif debris_type == debris_category.sc:
@@ -276,28 +276,47 @@ def fragmentation(m_target, m_projectile, v_impact, is_catastrophic, debris_type
     prelim_AM = np.array(distribution_AM(prelim_lambda_c, debris_type))
     prelim_masses = prelim_areas / 10**prelim_AM
     
+    ###### NOTE THIS STEP JUST FOP RB, FOR NOW THATS WHAT FOCUSING ON
+    
     unaccounted_mass = m_target - np.sum(prelim_masses)
     
-    # Currenttly doing CiELO approach of assuming all mass is in 1 big obj > 1m, but NASA spresds it btwn 2 - 6 smaller pieces > 1m
+    print(unaccounted_mass)
     
-    # This is a horrible implementation and needs be fixed, but I dont know methods for doing this better. Maybe monte carlo?
-    assumed_masses = np.array([0])
-    assumed_areas = np.array([])
-    assumed_AM = np.array([])
-    assumed_LC = np.array([uniform(1, 15)]) # Pick a random size for the left over deb
-    while np.abs(assumed_masses - unaccounted_mass) > 1:
-        assumed_lam_LC = np.array([np.log10(assumed_LC)])
-        assumed_areas = np.array([avg_area(assumed_LC)])
-        assumed_AM = np.array(distribution_AM(assumed_lam_LC[0], debris_type))
-        assumed_masses = assumed_areas / 10**assumed_AM
-        if assumed_masses < unaccounted_mass:
-            assumed_LC += 0.001 
-        else:
-            assumed_LC -= 0.001
+    n_large_deb = np.random.randint(2, 8) # Pick 2-8 pieces of deb > 1m to spread out the rest of the mass   
     
-    L_c = np.concatenate([prelim_L_c, assumed_LC])
-    areas = np.concatenate([prelim_areas, assumed_areas.flatten()])
-    masses = np.concatenate([prelim_masses, assumed_masses.flatten()])
+    print(n_large_deb)
+    
+   # Using 10**-4 to enure endpoints are not included
+    mass_range = np.linspace(10**-4, (unaccounted_mass - 10**-4), 10**4) # Create mass range, will use `n_large_deb` to split into sections
+    ranges = np.sort(np.random.choice(mass_range, n_large_deb - 1, replace=False))
+    ranges = np.concatenate([[0],ranges,[unaccounted_mass]])
+  
+    # Note adding zero for subtraction to work (correct dims) then dropping it afterward
+    mass_per_deb = np.concatenate((ranges[1:],np.zeros(1))) - ranges
+    mass_per_deb = np.resize(mass_per_deb, mass_per_deb.size - 1)
+    
+    
+    # For L_c > 1, A/M Distribution is basically deterministic, therefore will just use avg value, can get using np.inf
+    assumed_AM_factory = make_mean_AM(debris_type)
+    assumed_len = np.ones(mass_per_deb.shape)
+    assumed_AM = assumed_AM_factory(assumed_len)
+    
+    # Each mean has two possible values, randomly pick one of them for each piece of deb
+    AM_choices = np.random.choice([0,1], len(mass_per_deb), replace=True)
+    assumed_AM = 10**np.array([assumed_AM[AM_choices[i], i] for i in range(assumed_AM.shape[1])])
+    
+    # mass * AM = A(L_c), therefore can reverse Area function for L_c
+    area = mass_per_deb * assumed_AM
+    found_L_c = np.sort((area / 0.556945)**(1/2.0047077)) # Inversing the Area function defined above  
+    found_lambda_c = np.log10(found_L_c)
+    found_areas = avg_area(found_L_c)
+    
+    found_AM = np.array(distribution_AM(found_lambda_c, debris_type))
+    found_masses = found_areas / assumed_AM
+    
+    L_c = np.concatenate([prelim_L_c, found_L_c])
+    areas = np.concatenate([prelim_areas, found_areas])
+    masses = np.concatenate([prelim_masses, found_masses])
     AM = np.concatenate([prelim_AM, assumed_AM])
     
     return L_c, areas, masses, AM
