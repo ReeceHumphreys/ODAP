@@ -154,6 +154,6 @@ def rv2coe(r, v, mu = 398600.4418):
     T = 2*np.pi * np.sqrt(a**3 / mu)
       
     # Keplerian State + Extra info
-    ks = np.array([a, e_mag, i, Omega, omega, M, nu, p_semi, T])
+    ks = np.array([a, e_mag, i, Omega, omega, M, nu, p_semi, T, E])
 
     return ks
