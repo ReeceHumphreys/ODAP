@@ -23,6 +23,8 @@ def animate_scatters(iteration, data, scatters):
     return scatters
 
 def generate_visualization(data, title):
+    
+    img = plt.imread('blue_marble.jpg')
 
     fig = plt.figure()
     ax = p3.Axes3D(fig)
@@ -38,22 +40,24 @@ def generate_visualization(data, title):
 
     # Plot central body
     earth_radius = 3378.0 #km
-    _u, _v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
-    _x = earth_radius*np.cos(_u)*np.sin(_v)
-    _y = earth_radius*np.sin(_u)*np.sin(_v)
-    _z = earth_radius*np.cos(_v)
+    # define a grid matching the map size, subsample along with pixels
+    theta = np.linspace(0, np.pi, img.shape[0])
+    phi = np.linspace(0, 2*np.pi, img.shape[1])
 
-    earth_tilt = np.radians(23.5) # rAD
-    rot_axis = np.array([0,0,1])
-    rot_vec = earth_tilt * rot_axis
-    rotation = trans.Rotation.from_rotvec(rot_vec)
+    count = 180 # keep 180 points along theta and phi
+    theta_inds = np.linspace(0, img.shape[0] - 1, count).round().astype(int)
+    phi_inds = np.linspace(0, img.shape[1] - 1, count).round().astype(int)
+    theta = theta[theta_inds]
+    phi = phi[phi_inds]
+    img = img[np.ix_(theta_inds, phi_inds)]
 
-    # _x_r = rotation.apply(_x)
-    # _y_r = rotation.apply(_y)
-    # _z_r = rotation.apply(_z)
-
-    ax.plot_surface(_x, _y, _z, cmap=cm.coolwarm)
-
+    theta,phi = np.meshgrid(theta, phi)
+    R = earth_radius
+    x = R * np.sin(theta) * np.cos(phi)
+    y = R * np.sin(theta) * np.sin(phi)
+    z = R * np.cos(theta)
+    
+    ax.plot_surface(x.T, y.T, z.T, facecolors=img/255, cstride=1, rstride=1)
 
     # Initialize scatters
     scatters = [ ax.scatter(data[0][i,0:1], data[0][i,1:2], data[0][i,2:]) for i in range(data[0].shape[0]) ]
