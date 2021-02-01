@@ -14,6 +14,8 @@ Helpful links:
 Notes: Code was modified from Poliastro source, elements.py
 """
 
+mu = 398600.4418 #km^3s^-2
+
 @jit
 def rotation_matrix(angle, axis):
     
@@ -53,6 +55,25 @@ def coe2rv(k, p, ecc, inc, raan, argp, nu):
     ijk = pqw @ rm.T
     
     return ijk
+
+# ks = np.array([a, e_mag, i, Omega, omega, M, nu, p_semi, T, E])
+@jit(parallel=True)
+def coe2rv_many_new(state, mu=mu):
+    inc = np.deg2rad(state[2, :])
+    raan = np.deg2rad(state[3, :])
+    argp = np.deg2rad(state[4, :])
+    nu = np.deg2rad(state[6, :])
+    p = state[7, :]
+    ecc = state[1, :]
+    
+    n = nu.shape[0]
+    rr = np.zeros((n, 3), dtype=np.float64)
+    vv = np.zeros((n, 3), dtype=np.float64)
+    
+    for i in prange(n):    
+        rr[i, :], vv[i, :] = (coe2rv(mu, p[i], ecc[i], inc[i], raan[i], argp[i], nu[i]))
+        
+    return rr, vv
 
 @jit(parallel=True)
 def coe2rv_many(k, p, ecc, inc, raan, argp, nu):
