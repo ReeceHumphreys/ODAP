@@ -217,18 +217,27 @@ std_dev_deltaV = np.vectorize(std_dev_deltaV)
 
 """ ----------------- Distribution delta V ----------------- """
 def distribution_deltaV(chi, v_c, explosion=False):
-
     N = len(chi)
-    lower , upper = 0, 1.3 * v_c
-    mu = mean_deltaV(chi, explosion)
-    sigma = std_dev_deltaV()
-    deltaV = np.empty_like(chi)
-    # Returns a truncated lognormal pdf
-    for i in range(N):
-        deltaV[i] = lognorm.log_normal_truncated_ab_sample( mu[i], sigma, lower, upper, 1234 )[0]
-
-    return deltaV
-
+    mean = mean_deltaV(chi, True)
+    dev  = std_dev_deltaV()
+# print(np.mean(mean),dev)
+    max_itr = 5000
+    i = 0
+    base = 10
+    centered = np.random.normal(0, dev, N)
+    I = np.nonzero(base**(mean+centered)>1.3*v_c)[0]
+    n = len(I)
+    while n != 0 and i<max_itr:
+        centered[I] = np.random.normal(0, dev, n)
+        #I = np.nonzero(base**(mean+centered)>1.3*v_c)[0]
+        J = np.nonzero(base**(mean[I] + centered[I])>1.3*v_c)[0]
+        I = I[J]
+        n = len(I)
+        i+=1
+        print(n)
+    centered[I] = np.log10(1.3*v_c)
+    result = base**centered
+    return result
 
 """ ----------------- Unit vector delta V ----------------- """
 def unit_vector(N):
