@@ -153,12 +153,10 @@ class OrbitPropagator:
 
     def propagate_orbit(self):
 
-        mu = 398600.4418 #km^3s^-2
-
         times      = np.arange(self.tspan[0], self.tspan[-1], self.dt)
 
         # Mean anomaly rate of change
-        M_dt       = sqrt(mu/self.states[0, :]**3)
+        M_dt       = sqrt(self.cb['mu']/self.states[0, :]**3)
 
         Nd         = len(M_dt)
         Nt         = len(times)

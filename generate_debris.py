@@ -216,13 +216,13 @@ def std_dev_deltaV():
 std_dev_deltaV = np.vectorize(std_dev_deltaV)
 
 """ ----------------- Distribution delta V ----------------- """
-def distribution_deltaV(kai, v_c, explosion=False):
+def distribution_deltaV(chi, v_c, explosion=False):
 
-    N = len(kai)
+    N = len(chi)
     lower , upper = 0, 1.3 * v_c
-    mu = mean_deltaV(kai, explosion)
+    mu = mean_deltaV(chi, explosion)
     sigma = std_dev_deltaV()
-    deltaV = np.empty_like(kai)
+    deltaV = np.empty_like(chi)
     # Returns a truncated lognormal pdf
     for i in range(N):
         deltaV[i] = lognorm.log_normal_truncated_ab_sample( mu[i], sigma, lower, upper, 1234 )[0]

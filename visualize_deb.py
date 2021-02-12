@@ -1,5 +1,6 @@
 
 import mpl_toolkits.mplot3d.axes3d as p3
+import matplotlib
 from matplotlib.animation import FuncAnimation
 from matplotlib.animation import FFMpegWriter
 from matplotlib import cm
@@ -22,24 +23,30 @@ def animate_scatters(iteration, data, scatters):
         scatters[i].set_color
     return scatters
 
-def generate_visualization(data, title):
+def generate_visualization(data, title, cb):
+    
+    matplotlib.use('Agg') # Turn off displaying to the user
     
     img = plt.imread('blue_marble.jpg')
 
     fig = plt.figure()
+    plt.ioff()
     ax = p3.Axes3D(fig)
-
-    ax.set_xlim3d(-6378.0-1000, 6378.0+1000)
-    ax.set_xlabel('X (km)')
-
-    ax.set_ylim3d([-6378.0-1000, 6378.0+1000])
-    ax.set_ylabel('Y (km)')
-
-    ax.set_zlim3d([-6378.0-1000, 6378.0+1000])
-    ax.set_zlabel('Z (km)')
-
+    
     # Plot central body
-    earth_radius = 3378.0 #km
+    radius_earth = cb['radius'] / 1e3 #[km] (For performance)
+    data = data / 1e3                 #[km] (For performance)
+        
+    ax.set_xlim3d([-radius_earth-1000, radius_earth+1000])
+    ax.set_xlabel('X (m)')
+
+    ax.set_ylim3d([-radius_earth-1000, radius_earth+1000])
+    ax.set_ylabel('Y (m)')
+
+    ax.set_zlim3d([-radius_earth-1000, radius_earth+1000])
+    ax.set_zlabel('Z (m)')
+
+   
     # define a grid matching the map size, subsample along with pixels
     theta = np.linspace(0, np.pi, img.shape[0])
     phi = np.linspace(0, 2*np.pi, img.shape[1])
@@ -52,21 +59,23 @@ def generate_visualization(data, title):
     img = img[np.ix_(theta_inds, phi_inds)]
 
     theta,phi = np.meshgrid(theta, phi)
-    R = earth_radius
-    x = R * np.sin(theta) * np.cos(phi)
-    y = R * np.sin(theta) * np.sin(phi)
-    z = R * np.cos(theta)
+
+    x = radius_earth * np.sin(theta) * np.cos(phi)
+    y = radius_earth * np.sin(theta) * np.sin(phi)
+    z = radius_earth * np.cos(theta)
     
     ax.plot_surface(x.T, y.T, z.T, facecolors=img/255, cstride=1, rstride=1)
 
     # Initialize scatters
     scatters = [ ax.scatter(data[0][i,0:1], data[0][i,1:2], data[0][i,2:]) for i in range(data[0].shape[0]) ]
-
-    # # Number of iterations
+    print(data.shape)
+    # Number of iterations
     iterations = len(data)
     ani = FuncAnimation(fig, animate_scatters, iterations, fargs=(data, scatters),
                                            interval=200, blit=False, repeat=False)
 
     writervideo = FFMpegWriter(fps=5)
     name =  title + ".mp4"
+    print("Writing video, this may take a while ...")
     ani.save(name, writer=writervideo)
+    plt.close()
