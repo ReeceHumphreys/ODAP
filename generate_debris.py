@@ -221,7 +221,7 @@ def distribution_deltaV(chi, v_c, explosion=False):
     mean = mean_deltaV(chi, True)
     dev  = std_dev_deltaV()
 # print(np.mean(mean),dev)
-    max_itr = 5000
+    max_itr = 10000
     i = 0
     base = 10
     centered = np.random.normal(0, dev, N)
@@ -234,7 +234,6 @@ def distribution_deltaV(chi, v_c, explosion=False):
         I = I[J]
         n = len(I)
         i+=1
-        print(n)
     centered[I] = np.log10(1.3*v_c)
     result = base**centered
     return result

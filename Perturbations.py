@@ -8,6 +8,7 @@ from scipy.special import iv
 import planetary_data as pd
 import CoordTransforms as ct
 import Aerodynamics as aero
+from importlib import reload
 
 from importlib import reload
 reload(ct)
@@ -58,49 +59,58 @@ class OrbitPropagator:
 
 
     def diffy_q(self, t, state):
-        mu = 398600.4418
+
+        mu = self.cb['mu'] #[m^3 • s^-2]
 
         e, a, omega, Omega = state.reshape(4, len(self.A))
+
+        print(t)
+        #print('a0:', a[0])
 
         dedt = np.zeros_like(e)
         dadt = np.zeros_like(a)
         domegadt = np.zeros_like(omega)
         dOmegadt = np.zeros_like(Omega)
 
-        I_doom = a*(1-e) < self.cb['radius'] + 50 # 50 km above earth sats are doomed
+        I_doom = a*(1-e) < self.cb['radius'] + 50*1e3 # 50 km above earth sats are doomed
         a[I_doom] = 0
         e[I_doom] = 0
 
         if self.perts['aero']:
             c_d = 2.2 # Drag coefficient
+            drag_coef = (-(c_d * (self.A)) / self.M) #[m^2 • kg^-1]
 
-            drag_coef = (-(c_d * (self.A/1000)) / self.M) * (1000 / 1)**3 # convertting to kg / km^3 from kg /m^3
-
-            # altitude
+            # Altitude
             z = a - self.cb['radius']
+            print('z0: ', z[0])
 
             # Air density
-            rho = aero.atmosphere_density(z)
+            rho = aero.atmosphere_density(z) #[kg • m^-3]
             #atm_density[np.argwhere(np.isnan(atm_density))] = 0 # Need to determine why some are NaN
 
             # dedt
-            I    = (e>=0.001)
+            I       = (e>=0.001)
             dedt[I] = (drag_coef[I] * np.sqrt(mu / a[I]) * rho[I])
-            I    = I & (e<0.01)
-            x    = (a[I] * e[I]) / aero.scale_height(a[I])
+            I       = I & (e<0.01)
+            x       = (a[I] * e[I]) / aero.scale_height(z[I])
             dedt[I] *= iv(1,x) + (e[I]/2)*(iv(0,x) + iv(2,x))
 
             # dadt
-            dadt = drag_coef * np.sqrt(mu * a) * rho
+            dadt    = drag_coef * np.sqrt(mu * a) * rho
 
-            x    = (a * e) / aero.scale_height(a)
-            I    = (e>=0.001) & (e < 0.01)
+            print(dadt[0])
+
+            x       = (a * e) / aero.scale_height(z)
+            I       = (e>=0.001) & (e < 0.01)
             dadt[I] *= (iv(0,x[I]) + 2*e[I]*iv(1,x[I]))
-            I = (e >= 0.01)
+            I       = (e >= 0.01)
             dadt[I] *= iv(0, x[I]) + 2*e[I]*iv(1, x[I]) + (3/4)*e[I]**2*(iv(0, x[I]) + iv(2, x[I])) + (e[I]**3/4)*(3*iv(1, x[I]) + iv(3, x[I]))
 
             dedt[np.argwhere(np.isnan(dedt))] = 0
             dadt[np.argwhere(np.isnan(dadt))] = 0
+
+            #print(dadt[0])
+
 
         if self.perts['J2']:
             # Semi-latus rectum
@@ -123,17 +133,26 @@ class OrbitPropagator:
             domegadt[np.argwhere(np.isnan(domegadt))] = 0
             dOmegadt[np.argwhere(np.isnan(dOmegadt))] = 0
 
-        output = np.concatenate((dedt, dadt, domegadt, dOmegadt))
-        return output
+        y0 = np.concatenate((dedt, dadt, domegadt, dOmegadt))
+        return y0
 
 
     def propagate_perturbations(self):
 
+
+
+        reload(aero)
         # Need to introduce notion of randomizing the positions of the fragments as they dont matter once we start
         # introducing orbital perturbations
-
         times  = np.arange(self.tspan[0], self.tspan[-1], self.dt)
-        y0     = np.concatenate((self.states[-1, 1, :], self.states[-1, 0, :], self.states[-1, 4, :], self.states[-1, 3, :]))
+
+        e0 = self.states[-1, 1, :]
+        a0 = self.states[-1, 0, :]
+        omega0 = self.states[-1, 4, :]
+        Omega0 = self.states[-1, 3, :]
+        y0     = np.concatenate((e0, a0, omega0, Omega0))
+
+
 
         print('Initializing perturbations with the following effects:')
         if self.perts['aero']:
