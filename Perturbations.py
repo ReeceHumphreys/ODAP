@@ -64,9 +64,6 @@ class OrbitPropagator:
 
         e, a, omega, Omega = state.reshape(4, len(self.A))
 
-        print(t)
-        #print('a0:', a[0])
-
         dedt = np.zeros_like(e)
         dadt = np.zeros_like(a)
         domegadt = np.zeros_like(omega)
@@ -82,7 +79,6 @@ class OrbitPropagator:
 
             # Altitude
             z = a - self.cb['radius']
-            print('z0: ', z[0])
 
             # Air density
             rho = aero.atmosphere_density(z) #[kg • m^-3]
@@ -97,9 +93,6 @@ class OrbitPropagator:
 
             # dadt
             dadt    = drag_coef * np.sqrt(mu * a) * rho
-
-            print(dadt[0])
-
             x       = (a * e) / aero.scale_height(z)
             I       = (e>=0.001) & (e < 0.01)
             dadt[I] *= (iv(0,x[I]) + 2*e[I]*iv(1,x[I]))
@@ -108,9 +101,6 @@ class OrbitPropagator:
 
             dedt[np.argwhere(np.isnan(dedt))] = 0
             dadt[np.argwhere(np.isnan(dadt))] = 0
-
-            #print(dadt[0])
-
 
         if self.perts['J2']:
             # Semi-latus rectum
@@ -129,7 +119,6 @@ class OrbitPropagator:
             domegadt = base * (2 - (5/2)*sin(i)**2)
             dOmegadt = -base * cos(i)
 
-
             domegadt[np.argwhere(np.isnan(domegadt))] = 0
             dOmegadt[np.argwhere(np.isnan(dOmegadt))] = 0
 
@@ -138,8 +127,6 @@ class OrbitPropagator:
 
 
     def propagate_perturbations(self):
-
-
 
         reload(aero)
         # Need to introduce notion of randomizing the positions of the fragments as they dont matter once we start
@@ -151,8 +138,6 @@ class OrbitPropagator:
         omega0 = self.states[-1, 4, :]
         Omega0 = self.states[-1, 3, :]
         y0     = np.concatenate((e0, a0, omega0, Omega0))
-
-
 
         print('Initializing perturbations with the following effects:')
         if self.perts['aero']:
