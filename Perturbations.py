@@ -60,7 +60,7 @@ class OrbitPropagator:
 
     def diffy_q(self, t, state):
 
-        mu = self.cb['mu'] #[m^3 • s^-2]
+        mu = self.cb['mu'] #[m^3 * s^-2]
 
         e, a, omega, Omega = state.reshape(4, len(self.A))
 
@@ -75,13 +75,13 @@ class OrbitPropagator:
 
         if self.perts['aero']:
             c_d = 2.2 # Drag coefficient
-            drag_coef = (-(c_d * (self.A)) / self.M) #[m^2 • kg^-1]
+            drag_coef = (-(c_d * (self.A)) / self.M) #[m^2 * kg^-1]
 
             # Altitude
             z = a - self.cb['radius']
 
             # Air density
-            rho = aero.atmosphere_density(z) #[kg • m^-3]
+            rho = aero.atmosphere_density(z) #[kg * m^-3]
             #atm_density[np.argwhere(np.isnan(atm_density))] = 0 # Need to determine why some are NaN
 
             # dedt
