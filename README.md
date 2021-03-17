@@ -6,6 +6,8 @@ This is currently a work in progress and will be frequently updated.
 
 ## Getting Started
 
+TODO: Update install to show how to setup with conda
+
 To run this jupyter notebook, first create a Python3 virtual environment within the project using:
 
 ```python3 -m venv /venv```
