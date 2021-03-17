@@ -1,14 +1,5 @@
 .DS_Store
 .ipynb_checkpoints
-venv
-ss.bin
-Kessler_yf.ipynb
-Leap_Second.dat
-deltat.data
-deltat.preds
 ss.bin
 __pycache__
 generate_debris.pyc
-py3env
-Ellipsoid1.mp4
-Ellipsoid2.mp4
