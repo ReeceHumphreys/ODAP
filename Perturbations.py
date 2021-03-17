@@ -45,6 +45,22 @@ class OrbitPropagator:
 
         # Defining perturbations being considered
         self.perts = perts
+        
+        # Defining constants for aerodynamic drag
+        if self.perts['aero']:
+            self.K_a = np.matrix([[1, 0, 0, 0 ,0 ,0, 0],
+                   [0, 2, 0, 0, 0, 0, 0],
+                   [3/4, 0, 3/4, 0, 0, 0, 0],
+                   [0, 3/4, 0, 1/4, 0, 0, 0],
+                   [21/64, 0, 28/64, 0, 7/64, 0, 0],
+                   [0, 30/64, 0, 15/64, 0, 3/64, 0]])
+
+            self.K_e = np.matrix([[0, 1, 0, 0, 0, 0, 0],
+                   [1/2, 0 , 1/2, 0, 0, 0, 0],
+                   [0, -5/8, 0, 1/8, 0, 0, 0],
+                   [-5/16, 0, -4/16, 0, 1/16, 0, 0],
+                   [0, -18/128, 0, -1/128, 0, 3/128, 0],
+                   [-18/256, 0, -19/256, 0, 2/256, 0, 3/256]])
 
     def cartesian_representation(self):
     # Returns the cartesian state representation of states for vis. purposes
@@ -59,106 +75,95 @@ class OrbitPropagator:
 
 
     def diffy_q(self, t, state):
+        e, a, i, Omega, omega = state.reshape(5, len(self.A))
+        N_f = len(self.A)
 
-        mu = 3.986004418e5 #km^3 / s^-2    #self.cb['mu'] #[m^3 * s^-2]
+        # Central body information
+        mu     = self.cb['mu']
+        radius = self.cb['radius'] #[m]
+        J2 = self.cb['J2']
 
-        e, a, omega, Omega = state.reshape(4, len(self.A)) # a in km
+        # Current orbital information
+        peri = a * (1 - e) #[m]
+        p    = a * (1 - e**2) #[m] (Semi parameter)
+        n    = np.sqrt(mu / a**3) # (Mea motion)
 
-        dedt = np.zeros_like(e)
-        dadt = np.zeros_like(a)
-        domegadt = np.zeros_like(omega)
-        dOmegadt = np.zeros_like(Omega)
+        # Drag effects
+        h_p = (peri - radius) #[m]
+        rho = aero.atmosphere_density(h_p/1e3) #[kg * m^-3]
+        H = aero.scale_height(h_p/1e3) * 1e3 #[m]
 
-        I_doom = a*(1-e) < self.cb['radius']/1e3 + 50 # 50 km above earth sats are doomed
-        a[I_doom] = 0
-        e[I_doom] = 0
+        z = a*e / H
+        Cd = 0.7
+        tilt_factor =1
+        delta = Cd * (self.A[0] * tilt_factor) / self.M[0]
 
-        if self.perts['aero']:
-            c_d = 2.2 # Drag coefficient
-            drag_coef = (-(c_d * (self.A)) / self.M) * (1 / 1000)**2 #[km^2 * kg^-1]
-            # Altitude
-            perigee = a * (1 - e)
-            z = (perigee - self.cb['radius'] / 1e3) #[km]
-            h_ref = aero.reference_height(z) #[km]
-            R_h = self.cb['radius']/1e3 + h_ref
-            # Air density
-            rho = aero.atmosphere_density(z) * (1000/1)**3 #[kg * km^-3]
-            # Scale Height
-            H = aero.scale_height(z) #[km]
-            H[np.argwhere(np.isnan(H))] = 0
+        e_T = np.array([np.ones_like(e), e, e**2, e**3, e**4, e**5])
+        I_T = np.array([ iv(i, z) for i in range(7)])
+        k_a = delta * np.sqrt(mu * a) * rho
+        k_e = k_a / a
 
+        delta_e = np.zeros_like(e)
+        delta_a = np.zeros_like(a)
 
-            # dedt
-            I       = (e>=0.001)
-            dedt[I] = (drag_coef[I] * np.sqrt(mu / a[I]) * rho[I]) * np.exp(-((a[I] - h_ref[I])/H[I]))
-            I       = I & (e<0.01)
-            x       = (a[I] * e[I]) / (H[I])
-            dedt[I] *= iv(1,x) + (e[I]/2)*(iv(0,x) + iv(2,x))
+        # CASE e < 0.001
+        delta_e = np.zeros_like(e)
+        delta_a = -k_a
 
-            # dadt
-            dadt    = drag_coef * np.sqrt(mu * a) * rho * np.exp(-((a - h_ref)/H))
+        # CASE e>= 0.001
+        I = e>= 0.001
+        trunc_err_a = a[I]**2 * rho[I] * np.exp(-z[I]) * iv(0, z[I]) * e[I]**6
+        trunc_err_e = a[I] * rho[I] * np.exp(-z[I]) * iv(1, z[I]) * e[I]**6
 
-            x       = (a * e) / (H)
-            I       = (e>=0.001) & (e < 0.01)
-            dadt[I] *= (iv(0,x[I]) + 2*e[I]*iv(1,x[I]))
-            I       = (e >= 0.01)
-            dadt[I] *= iv(0, x[I]) + 2*e[I]*iv(1, x[I]) + (3/4)*e[I]**2*(iv(0, x[I]) + iv(2, x[I])) + (e[I]**3/4)*(3*iv(1, x[I]) + iv(3, x[I]))
+        transform_e = e_T.T.dot(self.K_e) * I_T
+        coef_e = np.array([ transform_e[i,i] for i in range(N_f)])[I]
 
-            dedt[np.argwhere(np.isnan(dedt))] = 0
-            dadt[np.argwhere(np.isnan(dadt))] = 0
+        transform_a = e_T.T.dot(self.K_a) * I_T
+        coef_a = np.array([ transform_a[i,i] for i in range(N_f)])[I]
 
-        # if self.perts['J2']:
-        #     # Semi-latus rectum
-        #     p = a * (1 - e**2)
-        #
-        #     # Mean motion
-        #     n = np.zeros_like(a)
-        #     I = a > 0
-        #     n[I] = np.sqrt(self.cb['mu'] / a[I]**3)
-        #
-        #     # Inclination, assuming constant for now, maybe will change
-        #     i = self.states[-1, 2, :]
-        #
-        #     base = (3/2) * self.cb['J2'] * (self.cb['radius']**2/p**2) * n
-        #
-        #     domegadt = base * (2 - (5/2)*sin(i)**2)
-        #     dOmegadt = -base * cos(i)
-        #
-        #     domegadt[np.argwhere(np.isnan(domegadt))] = 0
-        #     dOmegadt[np.argwhere(np.isnan(dOmegadt))] = 0
-        print(dadt)
-        y0 = np.concatenate((dedt, dadt, domegadt, dOmegadt))
-        return y0
+        delta_e[I] = -k_e[I] * np.exp(-z[I]) * (coef_e + trunc_err_e)
+        delta_a[I] = -k_a[I] * np.exp(-z[I]) * (coef_a + trunc_err_a)
+
+        delta_e[np.isnan(delta_e)] = 0
+        delta_a[np.isnan(delta_a)] = 0
+
+        # J2 Effects
+        base = (3/2) * self.cb['J2'] * (radius**2/p**2) * n
+        i = np.deg2rad(i)
+        delta_omega = base * (2 - (5/2)*np.sin(i)**2)
+        delta_Omega = -base * np.cos(i)
+        delta_omega = np.rad2deg(delta_omega) % 360
+        delta_Omega = np.rad2deg(delta_Omega) % 360
+
+        J = h_p < 100*1e3
+        delta_a[J] = 0
+        delta_e[J] = 0
+
+        return np.concatenate((delta_e, delta_a, np.zeros_like(i), delta_Omega, delta_omega))
 
 
     def propagate_perturbations(self):
 
-        reload(aero)
-        # Need to introduce notion of randomizing the positions of the fragments as they dont matter once we start
-        # introducing orbital perturbations
-        times  = np.arange(self.tspan[0], self.tspan[-1], self.dt)
+        a0, e0, i0, Omega0, omega0 = self.states[-1, :5, :]
+        nu0 = self.states[-1, 6, :]
 
-        e0 = self.states[-1, 1, :]
-        a0 = self.states[-1, 0, :]/1e3
-        omega0 = self.states[-1, 4, :]
-        Omega0 = self.states[-1, 3, :]
-        y0     = np.concatenate((e0, a0, omega0, Omega0))
-        period = np.min(self.states[-1, 8, :])
-        print('Initializing perturbations with the following effects:')
-        if self.perts['aero']:
-            print('Aerodynamic perturbations ...')
-        if self.perts['J2']:
-            print('J2 perturbations ...')
+        y0  = np.concatenate((e0, a0, i0, Omega0, omega0))
 
-        output = integrate.solve_ivp(self.diffy_q, [times[0], times[-1]], y0, t_eval = times, vectorized=True, max_step=period)
+        T_avg = np.mean(self.states[-1, 8, :])
+        times = np.arange(self.tspan[0], self.tspan[-1], self.dt)
+        output = integrate.solve_ivp(self.diffy_q, self.tspan, y0, t_eval = times)
 
-        # Unpacking output
-        de = output.y[0:len(self.A), :]
-        da = output.y[len(self.A):2*len(self.A), :]
-        domgea = output.y[2*len(self.A):3*len(self.A), :]
-        dOmega = output.y[3*len(self.A):output.y.shape[0], :]
-
-        return de, da, domgea, dOmega
+        # Unpacking output (Need to drop first timestep as studdent introduction of drag causes jumps)
+        N_f = len(self.A)
+        de = output.y[0:N_f, 1:]
+        da = output.y[N_f:2*N_f, 1:]
+        di = output.y[2*N_f:3*N_f, 1:]
+        dOmega = output.y[3*N_f:4*N_f, 1:]
+        domega = output.y[4*N_f:, 1:]
+        dnu = np.random.uniform(low=0., high=360., size=domega.shape)
+        dp = da * (1 - de**2)
+        
+        return de, da, di, dOmega, domega, dnu, dp
 
     def propagate_orbit(self):
 

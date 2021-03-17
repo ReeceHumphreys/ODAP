@@ -221,7 +221,7 @@ def distribution_deltaV(chi, v_c, explosion=False):
     mean = mean_deltaV(chi, True)
     dev  = std_dev_deltaV()
 # print(np.mean(mean),dev)
-    max_itr = 10000
+    max_itr = 15000
     i = 0
     base = 10
     centered = np.random.normal(0, dev, N)
