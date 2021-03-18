@@ -1,7 +1,6 @@
 import numpy as np
 import scipy
 from enum import IntEnum
-import lognorm as lognorm
 
 debris_category = IntEnum('Category', 'rb sc soc')
 
@@ -218,7 +217,7 @@ std_dev_deltaV = np.vectorize(std_dev_deltaV)
 """ ----------------- Distribution delta V ----------------- """
 def distribution_deltaV(chi, v_c, explosion=False):
     N = len(chi)
-    mean = mean_deltaV(chi, True)
+    mean = mean_deltaV(chi, explosion)
     dev  = std_dev_deltaV()
 # print(np.mean(mean),dev)
     max_itr = 15000
