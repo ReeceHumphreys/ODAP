@@ -8,3 +8,5 @@ gifs
 Presentation
 generate_debris.pyc
 venv
+drag_state.npz
+debris.npz
