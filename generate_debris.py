@@ -3,7 +3,7 @@ import scipy
 from enum import IntEnum
 
 debris_category = IntEnum('Category', 'rb sc soc')
-
+from numba import njit, prange
 
 """ ----------------- Mean ----------------- """
 def make_mean_AM(debris_type):
@@ -200,6 +200,7 @@ def avg_area(L_c):
 
 
 """ ----------------- Mean ----------------- """
+@njit()
 def mean_deltaV(kai, explosion):
     if explosion == True:
         return (0.2 * kai) + 1.85
@@ -207,35 +208,62 @@ def mean_deltaV(kai, explosion):
         # Is a collision
         return (0.9 * kai) + 2.9
 
-mean_deltaV = np.vectorize(mean_deltaV)
-
 """ ----------------- Standard Deviation ----------------- """
 def std_dev_deltaV():
     return 0.4
-std_dev_deltaV = np.vectorize(std_dev_deltaV)
 
 """ ----------------- Distribution delta V ----------------- """
+@njit()
+def distriNormale(mu,sigma,x):
+    p = (1/(sigma*np.sqrt(2*np.pi))*np.exp(-1/2.*((x-mu)/sigma)**2))
+    return p
+
+@njit()    
+def distriDeltaVExpl(nu,chi):
+    mu = 0.2*chi + 1.85
+    return distriNormale(mu,0.4,nu)
+    
+@njit( parallel=True )
 def distribution_deltaV(chi, v_c, explosion=False):
-    N = len(chi)
-    mean = mean_deltaV(chi, explosion)
-    dev  = std_dev_deltaV()
-# print(np.mean(mean),dev)
-    max_itr = 15000
-    i = 0
-    base = 10
-    centered = np.random.normal(0, dev, N)
-    I = np.nonzero(base**(mean+centered)>1.3*v_c)[0]
-    n = len(I)
-    while n != 0 and i<max_itr:
-        centered[I] = np.random.normal(0, dev, n)
-        #I = np.nonzero(base**(mean+centered)>1.3*v_c)[0]
-        J = np.nonzero(base**(mean[I] + centered[I])>1.3*v_c)[0]
-        I = I[J]
-        n = len(I)
-        i+=1
-    centered[I] = np.log10(1.3*v_c)
-    result = base**centered
-    return result
+        N = len(chi)
+        result = np.empty_like(chi)
+        progress = 0
+
+        for i in prange(N):
+            mean = mean_deltaV(chi[i], explosion)
+            dev  = 0.4
+            x = np.random.rand()
+            dv =x*1.3*v_c
+            dist = distriDeltaVExpl(np.log10(dv),chi[i])
+            y = np.random.rand()
+            while y > dist:
+                x = np.random.rand()
+                dv = x*1.3*v_c
+                dist =  distriDeltaVExpl(np.log10(dv),chi[i])
+                y = np.random.rand()
+            result[i] = dist
+        return result
+
+#     N = len(chi)
+#     mean = mean_deltaV(chi, explosion)
+#     dev  = std_dev_deltaV()
+# # print(np.mean(mean),dev)
+#     max_itr = 15000
+#     i = 0
+#     base = 10
+#     centered = np.random.normal(0, dev, N)
+#     I = np.nonzero(base**(mean+centered)>1.3*v_c)[0]
+#     n = len(I)
+#     while n != 0 and i<max_itr:
+#         centered[I] = np.random.normal(0, dev, n)
+#         #I = np.nonzero(base**(mean+centered)>1.3*v_c)[0]
+#         J = np.nonzero(base**(mean[I] + centered[I])>1.3*v_c)[0]
+#         I = I[J]
+#         n = len(I)
+#         i+=1
+#     centered[I] = np.log10(1.3*v_c)
+#     result = base**centered
+#     return result
 
 """ ----------------- Unit vector delta V ----------------- """
 def unit_vector(N):
@@ -254,12 +282,15 @@ from numpy.random import uniform
 def number_fragments(l_characteristic, m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):
     # Defining reference Mass
     if explosion == True: # Can be multiplied by scaling factor S
+        print("explosion")
         return 6*(l_characteristic)**(-1.6)
     else:
         m_ref = 0
-        if is_catastrophic: m_ref = m_target + m_projectile
-        else: m_ref = m_projectile * (v_impact)**2
-        return 0.1 * (m_ref)**0.75 * l_characteristic**-1.71
+        if is_catastrophic:
+            m_ref = m_target + m_projectile
+        else:
+            m_ref = m_projectile * (v_impact)**2
+        return 0.1 * ((m_ref)**0.75) * l_characteristic**(-1.71)
 
 
 def characteristic_lengths(m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):

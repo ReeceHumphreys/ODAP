@@ -2,4 +2,8 @@
 .ipynb_checkpoints
 ss.bin
 __pycache__
+figures
+plots
+gifs
+Presentation
 generate_debris.pyc
