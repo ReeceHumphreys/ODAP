@@ -118,7 +118,6 @@ def make_standard_dev_AM(debris_type):
 def alpha_AM(lambda_c, debris_type):
     def RB_alpha_AM(lambda_c):
         alpha = 1
-        # dev1 rule
         if lambda_c <= -1.4:
             alpha = 1
         elif (lambda_c > -1.4 and lambda_c < 0):
@@ -129,7 +128,6 @@ def alpha_AM(lambda_c, debris_type):
 
     def SC_alpha_AM(lambda_c):
         alpha = 1
-        # dev1 rule
         if lambda_c <= -1.95:
             alpha = 0
         elif (lambda_c > -1.95 and lambda_c < 0.55):
@@ -183,21 +181,16 @@ def distribution_AM(lambda_c, debris_type):
     else:
         means = mean_preSwitch[0]
         devs = std_dev_preSwitch[0]
-
         return np.random.normal(means, devs, N)
 
 """ ----------------- Area ----------------- """
 def avg_area(L_c):
-
     A = np.copy(L_c)
     I = A < 0.00167 #(m)
     A[I] = 0.540424 * A[I]**2
     I = A >= 0.00167 #(m)
     A[I] = 0.556945 * A[I]**2.0047077
-
     return A
-
-
 
 """ ----------------- Mean ----------------- """
 @njit()
@@ -205,7 +198,6 @@ def mean_deltaV(kai, explosion):
     if explosion == True:
         return (0.2 * kai) + 1.85
     else:
-        # Is a collision
         return (0.9 * kai) + 2.9
 
 """ ----------------- Standard Deviation ----------------- """
@@ -214,56 +206,38 @@ def std_dev_deltaV():
 
 """ ----------------- Distribution delta V ----------------- """
 @njit()
-def distriNormale(mu,sigma,x):
+def distriNormal(mu,sigma,x):
     p = (1/(sigma*np.sqrt(2*np.pi))*np.exp(-1/2.*((x-mu)/sigma)**2))
     return p
 
 @njit()    
-def distriDeltaVExpl(nu,chi):
+def distriDeltaVExp(nu,chi):
     mu = 0.2*chi + 1.85
-    return distriNormale(mu,0.4,nu)
+    return distriNormal(mu,0.4,nu)
+
+@njit() 
+def distriDeltaVColl(nu,chi):
+    mu = 0.9*chi + 2.9
+    return distriNormal(mu,0.4,nu)
     
 @njit( parallel=True )
-def distribution_deltaV(chi, v_c, explosion=False):
-        N = len(chi)
+def distribution_deltaV(AM, v_c, explosion=False):
+        chi = np.log10(AM)
+        N   = len(AM)
         result = np.empty_like(chi)
-        progress = 0
-
         for i in prange(N):
             mean = mean_deltaV(chi[i], explosion)
-            dev  = 0.4
-            x = np.random.rand()
-            dv =x*1.3*v_c
-            dist = distriDeltaVExpl(np.log10(dv),chi[i])
-            y = np.random.rand()
-            while y > dist:
-                x = np.random.rand()
-                dv = x*1.3*v_c
-                dist =  distriDeltaVExpl(np.log10(dv),chi[i])
-                y = np.random.rand()
-            result[i] = dist
+            dev = 0.4
+            s = np.random.normal(mean, scale=dev)
+            result[i] = s
+            
+        if explosion == False:
+            
+            # Limit the velocity to 1.3 * v_c (Need new implementation)
+            result[result > 1.3 * 1e3 * v_c] = 1.3*1e3*v_c
+      
         return result
-
-#     N = len(chi)
-#     mean = mean_deltaV(chi, explosion)
-#     dev  = std_dev_deltaV()
-# # print(np.mean(mean),dev)
-#     max_itr = 15000
-#     i = 0
-#     base = 10
-#     centered = np.random.normal(0, dev, N)
-#     I = np.nonzero(base**(mean+centered)>1.3*v_c)[0]
-#     n = len(I)
-#     while n != 0 and i<max_itr:
-#         centered[I] = np.random.normal(0, dev, n)
-#         #I = np.nonzero(base**(mean+centered)>1.3*v_c)[0]
-#         J = np.nonzero(base**(mean[I] + centered[I])>1.3*v_c)[0]
-#         I = I[J]
-#         n = len(I)
-#         i+=1
-#     centered[I] = np.log10(1.3*v_c)
-#     result = base**centered
-#     return result
+        
 
 """ ----------------- Unit vector delta V ----------------- """
 def unit_vector(N):
@@ -280,9 +254,8 @@ from numpy.random import uniform
 
 """ ----------------- Num. Fragments & Char. Length----------------- """
 def number_fragments(l_characteristic, m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):
-    # Defining reference Mass
-    if explosion == True: # Can be multiplied by scaling factor S
-        print("explosion")
+    # Defining reference mass
+    if explosion == True:
         return 6*(l_characteristic)**(-1.6)
     else:
         m_ref = 0
@@ -298,110 +271,39 @@ def characteristic_lengths(m_target, m_projectile, v_impact, is_catastrophic, de
     N_fragments = number_fragments(bins, m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion)
     N_per_bin = np.array(N_fragments[:-1] - N_fragments[1:]).astype(int)
     L_c = np.concatenate([uniform(bins[i], bins[i+1], size=N_per_bin[i]) for i in range(len(bins) - 1)])
-
     return L_c
 
 def fragmentation(m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion):
+    L_c      = characteristic_lengths(m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion)
+    lambda_c = np.log10(L_c)
+    A        = avg_area(L_c)
+    AM       = 10**np.array(distribution_AM(lambda_c, debris_type))
+    m        = A / AM
+    
+    # Ensure conservation of mass now by depositing remaining mass into large fragments
+    m_i = m_target + m_projectile
+    m_missing = m_i - np.sum(m)
+    n_large_deb = np.random.randint(2, 8) # Pick 2-8 pieces of deb > 1m to spread out the rest of the mass
+    
+    # Create mass range, will use `n_large_deb` to split into sections, using 10**-4 to enure endpoints are not included
+    mass_range = np.linspace(10**-4, (m_missing - 10**-4), 10**4)
+    ranges = np.sort(np.random.choice(mass_range, n_large_deb - 1, replace=False))
+    ranges = np.concatenate([[0],ranges,[m_missing]])
 
-    prelim_L_c = characteristic_lengths(m_target, m_projectile, v_impact, is_catastrophic, debris_type, explosion)
-    prelim_lambda_c = np.log10(prelim_L_c)
-    prelim_areas = avg_area(prelim_L_c)
-    prelim_AM = np.array(distribution_AM(prelim_lambda_c, debris_type))
-    prelim_masses = prelim_areas / 10**prelim_AM
-
-    if explosion == True:
-
-        unaccounted_mass = m_target - np.sum(prelim_masses)
-
-        n_large_deb = np.random.randint(2, 8) # Pick 2-8 pieces of deb > 1m to spread out the rest of the mass
-
-       # Using 10**-4 to enure endpoints are not included
-        mass_range = np.linspace(10**-4, (unaccounted_mass - 10**-4), 10**4) # Create mass range, will use `n_large_deb` to split into sections
-        ranges = np.sort(np.random.choice(mass_range, n_large_deb - 1, replace=False))
-        ranges = np.concatenate([[0],ranges,[unaccounted_mass]])
-
-        # Note adding zero for subtraction to work (correct dims) then dropping it afterward
-        mass_per_deb = np.concatenate((ranges[1:],np.zeros(1))) - ranges
-        mass_per_deb = np.resize(mass_per_deb, mass_per_deb.size - 1)
-
-
-        # For L_c > 1, A/M Distribution is basically deterministic, therefore will just use avg value, can get using np.inf
-        assumed_AM_factory = make_mean_AM(debris_type)
-        assumed_len = np.ones(mass_per_deb.shape)
-        assumed_AM = assumed_AM_factory(assumed_len)
-
-        # Each mean has two possible values, randomly pick one of them for each piece of deb
-        AM_choices = np.random.choice([0,1], len(mass_per_deb), replace=True)
-        assumed_AM = 10**np.array([assumed_AM[AM_choices[i], i] for i in range(assumed_AM.shape[1])])
-
-        # mass * AM = A(L_c), therefore can reverse Area function for L_c
-        area = mass_per_deb * assumed_AM
-        found_L_c = np.sort((area / 0.556945)**(1/2.0047077)) # Inversing the Area function defined above
-        found_lambda_c = np.log10(found_L_c)
-        found_areas = avg_area(found_L_c)
-
-        found_AM = np.array(distribution_AM(found_lambda_c, debris_type))
-        found_masses = found_areas / assumed_AM # Using assumed A/M since A/M is a distribution and could get diff values.
-
-        L_c = np.concatenate([prelim_L_c, found_L_c])
-        areas = np.concatenate([prelim_areas, found_areas])
-        masses = np.concatenate([prelim_masses, found_masses])
-        AM = np.concatenate([prelim_AM, assumed_AM])
-
-        return L_c, areas, masses, AM
-    else:
-        # Is a collision
-        if is_catastrophic == True:
-
-            unaccounted_mass = (m_target + m_projectile) - np.sum(prelim_masses)
-            # Put the rest of the mass in many fragments in last bin
-            deposit_bin = (np.geomspace(0.001, 1, 100)[-1] + np.geomspace(0.001, 1, 100)[-2])/2
-
-
-            n_large_deb = np.random.randint(15, 50) # Pick 2-8 pieces of deb > 1m to spread out the rest of the mass
-
-           # Using 10**-4 to enure endpoints are not included
-            mass_range = np.linspace(10**-4, (unaccounted_mass - 10**-4), 10**4) # Create mass range, will use `n_large_deb` to split into sections
-            ranges = np.sort(np.random.choice(mass_range, n_large_deb - 1, replace=False))
-            ranges = np.concatenate([[0],ranges,[unaccounted_mass]])
-
-            # Note adding zero for subtraction to work (correct dims) then dropping it afterward
-            found_masses = np.concatenate((ranges[1:],np.zeros(1))) - ranges
-            found_masses = np.resize(found_masses, found_masses.size - 1)
-
-            found_L_c = np.ones_like(found_masses) * deposit_bin
-            found_areas = avg_area(found_L_c)
-            found_AM = found_areas / found_masses
-
-            L_c = np.concatenate([prelim_L_c, found_L_c])
-            areas = np.concatenate([prelim_areas, found_areas])
-            masses = np.concatenate([prelim_masses, found_masses])
-            AM = np.concatenate([prelim_AM, found_AM])
-
-            return L_c, areas, masses, AM
-
-        else:
-            # Is a non catastrophic collision, Deposit remaining mass in 1 large piece of deb
-            unaccounted_mass = np.array([(m_target + m_projectile) - np.sum(prelim_masses)])
-
-            # For L_c > 1, A/M Distribution is basically deterministic, therefore will just use avg value, can get using np.inf
-            assumed_AM_factory = make_mean_AM(debris_type)
-            assumed_len = np.ones(unaccounted_mass.shape)
-            assumed_AM = assumed_AM_factory(assumed_len)
-
-            # Each mean has two possible values, randomly pick one of them for each piece of deb
-            AM_choices = np.random.choice([0,1], len(unaccounted_mass), replace=True)
-            assumed_AM = 10**np.array([assumed_AM[AM_choices[i], i] for i in range(assumed_AM.shape[1])])
-
-             # mass * AM = A(L_c), therefore can reverse Area function for L_c
-            area = unaccounted_mass * assumed_AM
-            found_L_c = np.sort((area / 0.556945)**(1/2.0047077)) # Inversing the Area function defined above
-            found_lambda_c = np.log10(found_L_c)
-            found_areas = avg_area(found_L_c)
-
-            L_c = np.concatenate([prelim_L_c, found_L_c])
-            areas = np.concatenate([prelim_areas, found_areas])
-            masses = np.concatenate([prelim_masses, unaccounted_mass])
-            AM = np.concatenate([prelim_AM, assumed_AM])
-
-            return L_c, areas, masses, AM
+    # Adding zeros for subtraction to have correct number of dim.
+    mass_per_deb = np.concatenate((ranges[1:],np.zeros(1))) - ranges
+    mass_per_deb = np.resize(mass_per_deb, mass_per_deb.size - 1)
+    
+    # For L_c > 1, A/M Distribution is basically deterministic, therefore will just use avg value
+    AM_missing = 10**make_mean_AM(debris_type)(np.ones(mass_per_deb.shape))  
+    A_missing  = (AM_missing * mass_per_deb)[0]
+    
+    # Inversing L_c function
+    L_c_missing = np.sort((A_missing / 0.556945)**(1/2.0047077)) # Inversing the Area function defined above
+    
+    L_c = np.concatenate([L_c, L_c_missing])
+    A = np.concatenate([A, A_missing])
+    m = np.concatenate([m, mass_per_deb])
+    AM = np.concatenate([AM, AM_missing[0]])
+    return L_c, A, m, AM
+    
