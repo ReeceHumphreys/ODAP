@@ -1,7 +1,0 @@
-###### Requirements without Version Specifiers ######
-scipy
-numpy
-skyfield
-jupyter
-matplotlib
-rebound
