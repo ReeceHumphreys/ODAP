@@ -1,5 +1,7 @@
 name: odap-env
 channels:
+  - plotly
+  - conda-forge
   - defaults
 dependencies:
   - python=3.9
