@@ -2,7 +2,8 @@ from .Parsing.TLEParser import TLEParser
 
 class Satellite:
 
-    def __init__(self, tle):
+    # Mass in kg
+    def __init__(self, tle, mass=500):
         """
         Constructs all the necessary attributes for the satellite object.
 
