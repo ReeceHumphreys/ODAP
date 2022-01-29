@@ -29,6 +29,9 @@ class FragmentationEvent():
         else:
             print("Computing Count for Collision")
 
+    def _computeCharacteristicLengthDistribution():
+        
+
 
 
 

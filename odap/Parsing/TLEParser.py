@@ -38,7 +38,7 @@ class TLEParser(ITLEParser):
     __line2_info = {
         0: (8,"inclination"),
         1: (8,"raan"),
-        2: (7,"eccentricity"),
+        2: (7 + 2,"eccentricity"), # Adding "0." to data for formatting
         3: (8,"aop"),
         4: (8,"mean_anomaly"),
         5: (11,"mean_motion"),
@@ -70,7 +70,7 @@ class TLEParser(ITLEParser):
     def __parse_line2(self, line):
         inclination = line[8:16]
         raan = line[17:25]
-        eccentricity = line[26:33]
+        eccentricity = "0." + line[26:33]
         aop = line[34:42]
         mean_anomaly = line[43:51]
         mean_motion = line[52:63]

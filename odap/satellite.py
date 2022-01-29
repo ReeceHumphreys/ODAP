@@ -1,5 +1,6 @@
 import numpy as np
 from .Parsing.TLEParser import TLEParser
+from .OrbitalElements import OrbitalElements
 
 
 class Satellite:
@@ -32,6 +33,9 @@ class Satellite:
 
         # Setting mass
         self.mass = mass
+
+    def getOrbitalElements(self):
+        self.elements = OrbitalElements(self)
 
     # Calculates the Characteristic Length assuming the mass is formed like a sphere.
     def computeCharacteristicLengthFromMass(self):
