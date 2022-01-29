@@ -18,7 +18,7 @@ mu = 398600.4418 #km^3s^-2
 
 @jit
 def rotation_matrix(angle, axis):
-
+    
     c = cos(angle)
     s = sin(angle)
 

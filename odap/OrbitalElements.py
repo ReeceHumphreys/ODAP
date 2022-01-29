@@ -6,14 +6,15 @@ mu_earth = 3.986004418e14 # [m^3 s^-2]
 class OrbitalElements():
 
     def __init__(self, satellite):
+        e = float(satellite.eccentricity)
         semiMajorAxis  = self.meanMotion2SemiMajorAxis(float(satellite.mean_motion))
         elements = [satellite.inclination, satellite.raan, satellite.aop, satellite.mean_anomaly]
         inclination, raan, aop, ma = [np.deg2rad(float(element)) for element in elements]
-        ea = self.meanAnomaly2EccentricAnomaly(ma, float(satellite.eccentricity))
+        ea = self.meanAnomaly2EccentricAnomaly(ma, e)
         
         self.a = semiMajorAxis
         self.inclination = inclination
-        self.eccentricity = satellite.eccentricity
+        self.eccentricity = e
         self.raan = raan
         self.aop = aop
         self.eccentricAnomaly = ea
@@ -26,6 +27,11 @@ class OrbitalElements():
     def meanAnomaly2EccentricAnomaly(self, ma, e):
         ea = ma + e * np.sin(ma)
         return normalizeRadians(self.newtonRaphson(ma, e, ea));
+
+    def eccentricAnomaly2MeanAnomaly(self):
+        e = self.eccentricity
+        ea = self.eccentricAnomaly
+        return 2 * np.arctan(np.sqrt((1 + e)/(1 - e)) * np.tan(ea / 2))
         
     def newtonRaphson(self, ma, e, ea):
         accuracy = 1e-16

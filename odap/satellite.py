@@ -1,7 +1,7 @@
 import numpy as np
 from .Parsing.TLEParser import TLEParser
 from .OrbitalElements import OrbitalElements
-
+from .CoordTransforms import coe2rv
 
 class Satellite:
 
@@ -36,6 +36,15 @@ class Satellite:
 
     def getOrbitalElements(self):
         self.elements = OrbitalElements(self)
+        mu_earth = 3.986004418e14 # [m^3 s^-2]
+        e = float(self.elements.eccentricity)
+        p = self.elements.a * (1 - e)
+        i = self.elements.inclination
+        raan = self.elements.raan
+        aop = self.elements.aop
+        nu = self.elements.eccentricAnomaly2MeanAnomaly()
+        r, v = coe2rv(mu_earth, p, e, i, raan, aop, nu)
+        print(r, v)
 
     # Calculates the Characteristic Length assuming the mass is formed like a sphere.
     def computeCharacteristicLengthFromMass(self):
