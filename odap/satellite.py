@@ -1,9 +1,11 @@
+import numpy as np
 from .Parsing.TLEParser import TLEParser
+
 
 class Satellite:
 
-    # Mass in kg
-    def __init__(self, tle, mass=500):
+    # Mass in kg (TODO: Check this makes sense)
+    def __init__(self, tle, mass=839.0):
         """
         Constructs all the necessary attributes for the satellite object.
 
@@ -27,3 +29,10 @@ class Satellite:
         # Extracting data from the third line of the tle
         (self.inclination, self.raan, self.eccentricity, self.aop,
          self.mean_anomaly, self.mean_motion, self.epoch_rev) = line3_data
+
+        # Setting mass
+        self.mass = mass
+
+    # Calculates the Characteristic Length assuming the mass is formed like a sphere.
+    def computeCharacteristicLengthFromMass(self):
+        return ((6.0 * self.mass) / (92.937 * np.pi)) ** (1.0 / 2.26)
