@@ -12,14 +12,18 @@ import numpy as np
  * @return the transformed x following the power law distribution
 */
 """
-def uniformToPowerLaw(x0, x1, n, y):
-    step = x1**(n + 1) - x0**(n + 1) * y + x0**(n + 1)
 
-# Assuming angle in degrees
-def normalizeAngle(angle):
+# TODO: Finish implementation of PowerLaw
+
+
+def power_law(x0, x1, n, y):
+    # step = x1**(n + 1) - x0**(n + 1) * y + x0**(n + 1)
+    pass
+
+
+def normalize_angle(angle):
     return (angle + 360) % 360
 
-# Assuming angle in degrees
-def normalizeRadians(rad):
-    return (rad + 2*np.pi) % 2*np.pi
 
+def normalize_radians(rad):
+    return (rad + 2*np.pi) % 2*np.pi

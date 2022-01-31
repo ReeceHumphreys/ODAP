@@ -14,11 +14,12 @@ Helpful links:
 Notes: Code was modified from Poliastro source, elements.py
 """
 
-mu = 398600.4418 #km^3s^-2
+mu = 398600.4418  # km^3s^-2
+
 
 @jit
 def rotation_matrix(angle, axis):
-    
+
     c = cos(angle)
     s = sin(angle)
 
@@ -31,12 +32,14 @@ def rotation_matrix(angle, axis):
     else:
         raise ValueError("Invalid axis: must be one of 'x', 'y' or 'z'")
 
+
 @jit
 def rv_pqw(k, p, ecc, nu):
     pqw = np.array([[cos(nu), sin(nu), 0], [-sin(nu), ecc + cos(nu), 0]]) * np.array(
         [[p / (1 + ecc * cos(nu))], [sqrt(k / p)]]
     )
     return pqw
+
 
 @jit
 def coe_rotation_matrix(inc, raan, argp):
@@ -45,6 +48,7 @@ def coe_rotation_matrix(inc, raan, argp):
     r = r @ rotation_matrix(inc, 0)
     r = r @ rotation_matrix(argp, 2)
     return r
+
 
 @jit
 def coe2rv(k, p, ecc, inc, raan, argp, nu):
@@ -57,6 +61,8 @@ def coe2rv(k, p, ecc, inc, raan, argp, nu):
     return ijk
 
 # ks = np.array([a, e_mag, i, Omega, omega, M, nu, p_semi, T, E])
+
+
 @jit(parallel=True)
 def coe2rv_many_new(state, mu=mu):
     inc = np.deg2rad(state[2, :])
@@ -71,9 +77,11 @@ def coe2rv_many_new(state, mu=mu):
     vv = np.zeros((n, 3), dtype=np.float64)
 
     for i in prange(n):
-        rr[i, :], vv[i, :] = (coe2rv(mu, p[i], ecc[i], inc[i], raan[i], argp[i], nu[i]))
+        rr[i, :], vv[i, :] = (
+            coe2rv(mu, p[i], ecc[i], inc[i], raan[i], argp[i], nu[i]))
 
     return rr, vv
+
 
 @jit(parallel=True)
 def coe2rv_many(k, p, ecc, inc, raan, argp, nu):
@@ -87,14 +95,17 @@ def coe2rv_many(k, p, ecc, inc, raan, argp, nu):
     vv = np.zeros((n, 3), dtype=np.float64)
 
     for i in prange(n):
-        rr[i, :], vv[i, :] = (coe2rv(k, p[i], ecc[i], inc[i], raan[i], argp[i], nu[i]))
+        rr[i, :], vv[i, :] = (
+            coe2rv(k, p[i], ecc[i], inc[i], raan[i], argp[i], nu[i]))
 
     return rr, vv
+
 
 """
 Converting from Cartesian to Keplerian
 --------------------------------------
 """
+
 
 def rv2coe(r, v, mu):
     ''' Converts a position, `r`, and a velocity, `v` to the set of keplerian elements.'''
@@ -134,22 +145,23 @@ def rv2coe(r, v, mu):
 
     # Eccentricty vector, e, and magnitude, e_mag (used freq)
     e = (np.cross(v, p) / mu) - r_hat
-    e_mag = norm(e, axis = 1)
+    e_mag = norm(e, axis=1)
 
     # Longitude of the ascending node, Omega
     Omega_hat = np.cross(np.array([0, 0, 1])[None, :], p)
-    Omega = np.arccos(Omega_hat[:,0]/norm(Omega_hat, axis=1))
+    Omega = np.arccos(Omega_hat[:, 0]/norm(Omega_hat, axis=1))
     Omega = testAngle(Omega_hat[:, 1], Omega)
 
     # Argument of periapsis, omega
-    omega = np.arccos(np.sum(Omega_hat*e, axis=1) / (norm(Omega_hat, axis=1)*norm(e, axis=1)))
-    B = e[:,2] < 0
+    omega = np.arccos(np.sum(Omega_hat*e, axis=1) /
+                      (norm(Omega_hat, axis=1)*norm(e, axis=1)))
+    B = e[:, 2] < 0
     omega[B] = 2*np.pi - omega[B]
     omega *= 180. / np.pi
 
     # True Anomaly, nu
-    nu = np.arccos( np.sum(e*r, axis=1) / (norm(e, axis=1) * norm(r, axis=1)))
-    B = np.sum(r*v, axis=1)<0
+    nu = np.arccos(np.sum(e*r, axis=1) / (norm(e, axis=1) * norm(r, axis=1)))
+    B = np.sum(r*v, axis=1) < 0
     nu[B] = 2*np.pi - nu[B]
     nu *= 180. / np.pi
 
@@ -157,15 +169,16 @@ def rv2coe(r, v, mu):
     i = np.arccos(p[:, 2] / norm(p, axis=1))*180./np.pi
 
     # Eccentric anomaly, E
-    E = 2*np.arctan(np.tan(np.deg2rad(nu)/2) / np.sqrt((1 + e_mag)/(1 - e_mag)))
+    E = 2*np.arctan(np.tan(np.deg2rad(nu)/2) /
+                    np.sqrt((1 + e_mag)/(1 - e_mag)))
 
     # Mean anomaly, M
     M = np.mod(E - e_mag * np.sin(E), 2*np.pi)
     M *= 180./np.pi
 
     # Semi-Major axis, a
-    R = norm(r, axis =1)
-    V = norm(v, axis =1)
+    R = norm(r, axis=1)
+    V = norm(v, axis=1)
     a = 1/((2 / R) - (V*V / mu))
 
     # Semi-parmeter, p_semi

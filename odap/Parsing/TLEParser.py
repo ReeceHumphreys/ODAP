@@ -1,15 +1,16 @@
 from .ITLEParser import ITLEParser
 
+
 class TLEParser(ITLEParser):
 
     # The name provided in a TLE when some of the data may be missing
     __incomplete_tle_name = "TBA - TO BE ASSIGNED"
-    
+
     """
     Specifications about the data to be parsed from the first line
     of the TLE. The keys respond to the expected location of the data
     in the returned tuple. The value is a tuple where the first value
-    is the length of the data and the second value is the name of the 
+    is the length of the data and the second value is the name of the
     parsed field.
     """
     __line1_info = {
@@ -20,30 +21,29 @@ class TLEParser(ITLEParser):
         4: (3, "piece"),
         5: (2, "epoch_year"),
         6: (12, "epoch_day"),
-        7: (10, "ballistic_coefficient"), 
+        7: (10, "ballistic_coefficient"),
         8: (8, "mean_motion_dotdot"),
-        9: (8,"bstar"),
-        10: (1,"ephemeris_type"),
-        11: (4,"element_number"),
-        }
+        9: (8, "bstar"),
+        10: (1, "ephemeris_type"),
+        11: (4, "element_number"),
+    }
 
-    
     """
     Specifications about the data to be parsed from the first line
     of the TLE. The keys respond to the expected location of the data
     in the returned tuple. The value is a tuple where the first value
-    is the length of the data and the second value is the name of the 
+    is the length of the data and the second value is the name of the
     parsed field.
     """
     __line2_info = {
-        0: (8,"inclination"),
-        1: (8,"raan"),
-        2: (7 + 2,"eccentricity"), # Adding "0." to data for formatting
-        3: (8,"aop"),
-        4: (8,"mean_anomaly"),
-        5: (11,"mean_motion"),
-        6: (5,"epoch_rev"),
-        }
+        0: (8, "inclination"),
+        1: (8, "raan"),
+        2: (7 + 2, "eccentricity"),  # Adding "0." to data for formatting
+        3: (8, "aop"),
+        4: (8, "mean_anomaly"),
+        5: (11, "mean_motion"),
+        6: (5, "epoch_rev"),
+    }
 
     def __parse_line0(self, line):
         name = line[2:]
@@ -64,8 +64,8 @@ class TLEParser(ITLEParser):
         element_number = line[65:69]
 
         return (num, classification, year, launch,
-        piece, epoch_year, epoch_day, ballistic_coefficient,
-        mean_motion_dotdot, bstar, ephemeris_type, element_number)
+                piece, epoch_year, epoch_day, ballistic_coefficient,
+                mean_motion_dotdot, bstar, ephemeris_type, element_number)
 
     def __parse_line2(self, line):
         inclination = line[8:16]
@@ -74,14 +74,16 @@ class TLEParser(ITLEParser):
         aop = line[34:42]
         mean_anomaly = line[43:51]
         mean_motion = line[52:63]
-        epoch_rev   = line[63:68]
+        epoch_rev = line[63:68]
 
-        return (inclination, raan, eccentricity, 
-        aop, mean_anomaly, mean_motion, epoch_rev)
+        return (inclination, raan, eccentricity,
+                aop, mean_anomaly, mean_motion, epoch_rev)
 
     def __validate_line0(self, data):
-        if len(data) > 24: raise ValueError('Parsed satellite name was too long')
-        if bool(data and not data.isspace()) == False: raise ValueError('No satellite name was found in the TLE')
+        if len(data) > 24:
+            raise ValueError('Parsed satellite name was too long')
+        if bool(data and not data.isspace()) is False:
+            raise ValueError('No satellite name was found in the TLE')
         return data
 
     def __validate_line1(self, data, name):
@@ -89,28 +91,36 @@ class TLEParser(ITLEParser):
         # by the TLE format and that the data was successfuly found
 
         for i in range(len(data)):
-            if bool(data[i] and not data[i].isspace()) == False:
+            if bool(data[i] and not data[i].isspace()) is False:
 
-                # Some TLES in the dataset do not have completed information, this is an exception 
+                # Some TLES in the dataset do not have completed information, this is an exception
                 # to not require data for any fields for those satellites.
                 if not self.__incomplete_tle_name == name:
-                    raise ValueError('No satellite %s was found in the TLE for satellite with name `%s`' % (self.__line1_info[i][1], name))
+                    raise ValueError(
+                        'No satellite %s was found in the TLE for satellite with name `%s`' %
+                        (self.__line1_info[i][1], name))
 
             if not len(data[i]) == self.__line1_info[i][0]:
-                raise ValueError('The length of the parsed field `%s` is did not match the specified length (%s)' % (self.__line1_info[i][1], self.__line1_info[i][0]))
+                raise ValueError(
+                    'The length of the parsed field `%s` is did not match the specified length (%s)' %
+                    (self.__line1_info[i][1], self.__line1_info[i][0]))
         return data
 
     def __validate_line2(self, data, name):
         for i in range(len(data)):
-            if bool(data[i] and not data[i].isspace()) == False:
+            if bool(data[i] and not data[i].isspace()) is False:
 
-                # Some TLES in the dataset do not have completed information, this is an exception 
+                # Some TLES in the dataset do not have completed information, this is an exception
                 # to not require data for any fields for those satellites.
                 if not self.__incomplete_tle_name == name:
-                    raise ValueError('No satellite %s was found in the TLE for satellite with name `%s`' % (self.__line2_info[i][1], name))
+                    raise ValueError(
+                        'No satellite %s was found in the TLE for satellite with name `%s`' %
+                        (self.__line2_info[i][1], name))
 
             if not len(data[i]) == self.__line2_info[i][0]:
-                raise ValueError('The length of the parsed field `%s` is did not match the specified length (%s)' % (self.__line2_info[i][1], self.__line2_info[i][0]))
+                raise ValueError(
+                    'The length of the parsed field `%s` is did not match the specified length (%s)' %
+                    (self.__line2_info[i][1], self.__line2_info[i][0]))
         return data
 
     def parse(self, tle):

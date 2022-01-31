@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
+
 class ITLEParser:
     __metaclass__ = ABCMeta
 

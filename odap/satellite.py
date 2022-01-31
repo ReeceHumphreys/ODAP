@@ -3,6 +3,7 @@ from .Parsing.TLEParser import TLEParser
 from .OrbitalElements import OrbitalElements
 from .CoordTransforms import coe2rv
 
+
 class Satellite:
 
     # Mass in kg (TODO: Check this makes sense)
@@ -12,7 +13,7 @@ class Satellite:
 
         Parameters
         ----------
-            tles : array 
+            tles : array
                 an (3, ) NumPy array where each element corresponds to the line of a two-line element
 
         """
@@ -23,9 +24,18 @@ class Satellite:
         self.name = line1_data
 
         # Extracting data from the second line of the tle
-        (self.num, self.classification, self.year, self.launch, self.piece,
-        self.epoch_year, self.epoch_day, self.ballistic_coefficient,
-        self.mean_motion_dotdot, self.bstar, self.ephemeris_type, self.element_number) = line2_data
+        (self.num,
+         self.classification,
+         self.year,
+         self.launch,
+         self.piece,
+         self.epoch_year,
+         self.epoch_day,
+         self.ballistic_coefficient,
+         self.mean_motion_dotdot,
+         self.bstar,
+         self.ephemeris_type,
+         self.element_number) = line2_data
 
         # Extracting data from the third line of the tle
         (self.inclination, self.raan, self.eccentricity, self.aop,
@@ -34,18 +44,19 @@ class Satellite:
         # Setting mass
         self.mass = mass
 
-    def getOrbitalElements(self):
+    def get_orbital_elements(self):
         self.elements = OrbitalElements(self)
-        mu_earth = 3.986004418e14 # [m^3 s^-2]
+        mu_earth = 3.986004418e14  # [m^3 s^-2]
         e = float(self.elements.eccentricity)
         p = self.elements.a * (1 - e)
         i = self.elements.inclination
         raan = self.elements.raan
         aop = self.elements.aop
-        nu = self.elements.eccentricAnomaly2MeanAnomaly()
+        nu = self.elements.eccentric_anomaly(float(self.mean_anomaly), e)
         r, v = coe2rv(mu_earth, p, e, i, raan, aop, nu)
         print(r, v)
 
-    # Calculates the Characteristic Length assuming the mass is formed like a sphere.
-    def computeCharacteristicLengthFromMass(self):
+    # Calculates the Characteristic Length assuming the mass is formed like a
+    # sphere.
+    def compute_characteristic_length(self):
         return ((6.0 * self.mass) / (92.937 * np.pi)) ** (1.0 / 2.26)
