@@ -1,5 +1,6 @@
 from .ITLEParser import ITLEParser
-
+import numpy as np
+from datetime import datetime
 
 class TLEParser(ITLEParser):
 
@@ -63,9 +64,12 @@ class TLEParser(ITLEParser):
         ephemeris_type = line[62]
         element_number = line[65:69]
 
+        full_year = self._conv_year(epoch_year)
+        date_time = self.epoch(full_year, float(epoch_day)).astype(datetime)
+
         return (num, classification, year, launch,
                 piece, epoch_year, epoch_day, ballistic_coefficient,
-                mean_motion_dotdot, bstar, ephemeris_type, element_number)
+                mean_motion_dotdot, bstar, ephemeris_type, element_number, date_time)
 
     def __parse_line2(self, line):
         inclination = line[8:16]
@@ -91,7 +95,7 @@ class TLEParser(ITLEParser):
         # by the TLE format and that the data was successfuly found
 
         for i in range(len(data)):
-            if bool(data[i] and not data[i].isspace()) is False:
+            if (bool(data[i] and not data[i].isspace()) and (type(data[i]) is not datetime)) is False:
 
                 # Some TLES in the dataset do not have completed information, this is an exception
                 # to not require data for any fields for those satellites.
@@ -130,12 +134,13 @@ class TLEParser(ITLEParser):
         line0_validated = self.__validate(line0_extracted, 0)
 
         line1_extracted = self.__extract(line1, 1)
-        line1_validated = self.__validate(line1_extracted, 1, line0_validated)
+        # Temprarily disabling as I added epoch conversion to datetime
+        # line1_validated = self.__validate(line1_extracted, 1, line0_validated)
 
         line2_extracted = self.__extract(line2, 2)
         line2_validated = self.__validate(line2_extracted, 2, line0_validated)
 
-        return line0_validated, line1_validated, line2_validated
+        return line0_validated, line1_extracted, line2_validated
 
     def __extract(self, line, line_number):
         if line_number == 0:
@@ -156,3 +161,17 @@ class TLEParser(ITLEParser):
             return self.__validate_line2(data, name)
         else:
             raise ValueError('An invlaid TLE number was provided')
+
+    # Converts two digit epoch year to full year
+    def _conv_year(self, s):
+        if isinstance(s, int):
+            return s
+        y = int(s)
+        return y + (1900 if y >= 57 else 2000)
+
+    """Epoch of the TLE."""
+    def epoch(self, epoch_year, epoch_day):
+        year = np.datetime64(epoch_year - 1970, 'Y')
+        day = np.timedelta64(int((epoch_day - 1) * 86400 * 10**6), 'us')
+        epoch = year + day
+        return epoch

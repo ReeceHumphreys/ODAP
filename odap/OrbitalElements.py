@@ -21,6 +21,7 @@ class OrbitalElements():
         self.raan = raan
         self.aop = aop
         self.eccentricAnomaly = ea
+        self.true_anomaly = self._true_anomaly()
 
     # Mean motion (n) from tle in rev / day
     def semi_major_axis(self, n):
@@ -31,7 +32,7 @@ class OrbitalElements():
         ea = ma + e * np.sin(ma)
         return normalize_radians(self.newton_raphson(ma, e, ea))
 
-    def true_anomaly(self):
+    def _true_anomaly(self):
         e = self.eccentricity
         ea = self.eccentricAnomaly
         return 2 * np.arctan(np.sqrt((1 + e) / (1 - e)) * np.tan(ea / 2))

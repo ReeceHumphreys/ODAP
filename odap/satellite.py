@@ -35,7 +35,8 @@ class Satellite:
          self.mean_motion_dotdot,
          self.bstar,
          self.ephemeris_type,
-         self.element_number) = line2_data
+         self.element_number,
+         self.datetime) = line2_data
 
         # Extracting data from the third line of the tle
         (self.inclination, self.raan, self.eccentricity, self.aop,
@@ -46,13 +47,13 @@ class Satellite:
 
     def get_orbital_elements(self):
         self.elements = OrbitalElements(self)
-        mu_earth = 3.986004418e14  # [m^3 s^-2]
-        e = float(self.elements.eccentricity)
-        p = self.elements.a * (1 - e)
+        mu_earth = 398600.4418  # [km^3 s^-2]
+        e = self.elements.eccentricity
+        p = (self.elements.a / 1e3) * (1 - e)
         i = self.elements.inclination
         raan = self.elements.raan
         aop = self.elements.aop
-        nu = self.elements.eccentric_anomaly(float(self.mean_anomaly), e)
+        nu = self.elements.true_anomaly
         r, v = coe2rv(mu_earth, p, e, i, raan, aop, nu)
         print(r, v)
 
