@@ -1,5 +1,4 @@
 import numpy as np
-from .Parsing.TLEParser import TLEParser
 from .OrbitalElements import OrbitalElements
 from .CoordTransforms import coe2rv
 

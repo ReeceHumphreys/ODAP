@@ -27,3 +27,15 @@ def normalize_angle(angle):
 
 def normalize_radians(rad):
     return (rad + 2*np.pi) % 2*np.pi
+
+def newton_raphson(M, ecc, E):
+        accuracy = 1e-16
+        max_loop = 100
+        term = 0
+        current_loop = 0
+        while (abs(term / max(E, 1.0))
+               ) > accuracy and (current_loop < max_loop):
+            term = self.kep_E(E, M, ecc) / self.d_kep_E(E, ecc)
+            E = E - term
+            current_loop += 1
+        return E
