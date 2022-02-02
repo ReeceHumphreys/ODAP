@@ -1,62 +1,69 @@
 import numpy as np
-from .OrbitalElements import OrbitalElements
 from .CoordTransforms import coe2rv
+
+# kg
+DEFAULT_MASS = 839.0
+
+# "m3 / (s2)"
+mu_Earth = 3.986004418e14
 
 
 class Satellite:
 
-    # Mass in kg (TODO: Check this makes sense)
-    def __init__(self, tle, mass=839.0):
+    # All satellites should have orbital elements.
+    # Then the carteisan state is constructed if needed
+
+    def __init__(self, tle, mass=DEFAULT_MASS):
         """
-        Constructs all the necessary attributes for the satellite object.
+        Constructs all the necessary attributes for the satellite object from a TLE.
 
         Parameters
         ----------
-            tles : array
-                an (3, ) NumPy array where each element corresponds to the line of a two-line element
+            tles : TLE
+            mass : Mass of the Satellite in kg
 
         """
-
-        line1_data, line2_data, line3_data = TLEParser().parse(tle)
-
-        # Extracting data from the first line of the tle
-        self.name = line1_data
-
-        # Extracting data from the second line of the tle
-        (self.num,
-         self.classification,
-         self.year,
-         self.launch,
-         self.piece,
-         self.epoch_year,
-         self.epoch_day,
-         self.ballistic_coefficient,
-         self.mean_motion_dotdot,
-         self.bstar,
-         self.ephemeris_type,
-         self.element_number,
-         self.datetime) = line2_data
-
-        # Extracting data from the third line of the tle
-        (self.inclination, self.raan, self.eccentricity, self.aop,
-         self.mean_anomaly, self.mean_motion, self.epoch_rev) = line3_data
-
-        # Setting mass
+        self.tle = tle
         self.mass = mass
 
-    def get_orbital_elements(self):
-        self.elements = OrbitalElements(self)
-        mu_earth = 398600.4418  # [km^3 s^-2]
-        e = self.elements.eccentricity
-        p = (self.elements.a / 1e3) * (1 - e)
-        i = self.elements.inclination
-        raan = self.elements.raan
-        aop = self.elements.aop
-        nu = self.elements.true_anomaly
-        r, v = coe2rv(mu_earth, p, e, i, raan, aop, nu)
-        print(r, v)
+        self.ecc = tle.ecc
+        self.a = tle.a
+        self.inc = tle.inc
+        self.raan = tle.raan
+        self.argp = tle.argp
+        self.n = tle.n
+        self.nu = tle.nu
+        self.M = tle.M
+
+        # Setting computed properties to None
+        self.r = None
+        self.v = None
+
+    # def __init__(self, orbital_elements, mass=DEFAULT_MASS):
+    #     """
+    #     Constructs all the necessary attributes for the satellite object from a Orbital Elements.
+
+    #     Parameters
+    #     ----------
+    #         tles : TLE
+    #         mass : Mass of the Satellite in kg
+
+    #     """
+    #     # TODO: Implement later
+    #     pass
+
+    @property
+    def cartesian_state(self):
+        if self.r == None or self.v == None:
+            p = self.a * (1 - self.ecc**2)
+            r, v = coe2rv(mu_Earth, p, self.ecc, self.inc,
+                          self.raan, self.argp, self.nu)
+            self.r = r
+            self.v = v
+        return self.r, self.v
 
     # Calculates the Characteristic Length assuming the mass is formed like a
     # sphere.
+
     def compute_characteristic_length(self):
         return ((6.0 * self.mass) / (92.937 * np.pi)) ** (1.0 / 2.26)

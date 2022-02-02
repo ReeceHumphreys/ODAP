@@ -64,19 +64,24 @@ class TLE:
             # Make sure the mean anomaly is between -pi and pi
             M = np.deg2rad(((self.M + 180) % 360 - 180))
             ecc = self.ecc
-            nu_rad = _M_to_nu(M, ecc)
+            nu_rad = normalize_radians(_M_to_nu(M, ecc))
             self._nu = np.rad2deg(nu_rad)
         return self._nu
 
 
 def _M_to_nu(M, ecc):
     E = _M_to_E(M, ecc)
-    return 2 * np.arctan(np.sqrt((1 + ecc) / (1 - ecce)) * np.tan(E / 2))
+    nu = 2 * np.arctan(np.sqrt((1 + ecc) / (1 - ecc)) * np.tan(E / 2))
+    return nu
 
 
 def _M_to_E(M, ecc):
-    E = M + ecc * np.sin(M)
-    return normalize_radians(newton_raphson(M, ecc, E))
+    if -np.pi < M < 0 or np.pi < M:
+        E0 = M - ecc
+    else:
+        E0 = M + ecc
+    E  = newton_raphson(E0, M, ecc)
+    return E
 
 
 def _conv_year(s):
