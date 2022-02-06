@@ -12,12 +12,9 @@ import numpy as np
  * @return the transformed x following the power law distribution
 */
 """
-
-# TODO: Finish implementation of PowerLaw
-
 def power_law(x0, x1, n, y):
-    # step = x1**(n + 1) - x0**(n + 1) * y + x0**(n + 1)
-    pass
+    step = pow(x1, n + 1) - pow(x0, n + 1) * y + pow(x0, n + 1)
+    return pow(step, 1 / (n + 1))
 
 def _kepler_equation(E, M, ecc):
     return E_to_M(E, ecc) - M

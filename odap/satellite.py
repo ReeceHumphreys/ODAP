@@ -7,7 +7,6 @@ DEFAULT_MASS = 839.0
 # "m3 / (s2)"
 mu_Earth = 3.986004418e14
 
-
 class Satellite:
 
     # All satellites should have orbital elements.
@@ -36,8 +35,8 @@ class Satellite:
         self.M = tle.M
 
         # Setting computed properties to None
-        self.r = None
-        self.v = None
+        self.r = np.array([None, None, None])
+        self.v = np.array([None, None, None])
 
     # def __init__(self, orbital_elements, mass=DEFAULT_MASS):
     #     """
@@ -54,7 +53,8 @@ class Satellite:
 
     @property
     def cartesian_state(self):
-        if self.r == None or self.v == None:
+        print(self.r, self.v)
+        if self.r.any() == None or self.v.any() == None:
             p = self.a * (1 - self.ecc**2)
             r, v = coe2rv(mu_Earth, p, self.ecc, np.deg2rad(self.inc),
                           np.deg2rad(self.raan), np.deg2rad(self.argp), np.deg2rad(self.nu))
@@ -65,5 +65,11 @@ class Satellite:
     # Calculates the Characteristic Length assuming the mass is formed like a
     # sphere.
 
-    def compute_characteristic_length(self):
+    @property
+    def position(self):
+        r, v = self.cartesian_state
+        return r
+
+    @property
+    def characteristic_length(self):
         return ((6.0 * self.mass) / (92.937 * np.pi)) ** (1.0 / 2.26)
