@@ -1,4 +1,4 @@
-from .utils import normalize_radians, newton_raphson
+from .utils import _M_to_nu, newton_factory
 import numpy as np
 from datetime import datetime
 
@@ -61,28 +61,12 @@ class TLE:
     def nu(self):
         """True anomaly."""
         if self._nu is None:
-            # Make sure the mean anomaly is between -pi and pi
-            M = np.deg2rad(((self.M + 180) % 360 - 180))
+            # Wrap M to [-pi, pi]
+            M = (np.deg2rad(self.M) + np.pi) % (2 * np.pi) - np.pi
             ecc = self.ecc
-            nu_rad = normalize_radians(_M_to_nu(M, ecc))
+            nu_rad = (_M_to_nu(M, ecc) + np.pi) % (2 * np.pi) - np.pi
             self._nu = np.rad2deg(nu_rad)
         return self._nu
-
-
-def _M_to_nu(M, ecc):
-    E = _M_to_E(M, ecc)
-    nu = 2 * np.arctan(np.sqrt((1 + ecc) / (1 - ecc)) * np.tan(E / 2))
-    return nu
-
-
-def _M_to_E(M, ecc):
-    if -np.pi < M < 0 or np.pi < M:
-        E0 = M - ecc
-    else:
-        E0 = M + ecc
-    E  = newton_raphson(E0, M, ecc)
-    return E
-
 
 def _conv_year(s):
     """Interpret a two-digit year string."""

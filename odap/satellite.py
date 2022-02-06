@@ -56,8 +56,8 @@ class Satellite:
     def cartesian_state(self):
         if self.r == None or self.v == None:
             p = self.a * (1 - self.ecc**2)
-            r, v = coe2rv(mu_Earth, p, self.ecc, self.inc,
-                          self.raan, self.argp, self.nu)
+            r, v = coe2rv(mu_Earth, p, self.ecc, np.deg2rad(self.inc),
+                          np.deg2rad(self.raan), np.deg2rad(self.argp), np.deg2rad(self.nu))
             self.r = r
             self.v = v
         return self.r, self.v

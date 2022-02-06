@@ -15,34 +15,49 @@ import numpy as np
 
 # TODO: Finish implementation of PowerLaw
 
-
 def power_law(x0, x1, n, y):
     # step = x1**(n + 1) - x0**(n + 1) * y + x0**(n + 1)
     pass
 
+def _kepler_equation(E, M, ecc):
+    return E_to_M(E, ecc) - M
 
-def normalize_angle(angle):
-    return (angle + 360) % 360
+def _kepler_equation_prime(E, M, ecc):
+    return 1 - ecc * np.cos(E)
 
+def E_to_M(E, ecc):
+    M = E - ecc * np.sin(E)
+    return M
 
-def normalize_radians(rad):
-    return (rad + 2*np.pi) % 2*np.pi
+def _M_to_nu(M, ecc):
+    E = M_to_E(M, ecc)
+    nu = 2 * np.arctan(np.sqrt((1 + ecc) / (1 - ecc)) * np.tan(E / 2))
+    return nu
 
-def newton_raphson(E, M, ecc):
-        accuracy = 1e-16
-        max_loop = 100
-        term = 0
-        current_loop = 0
-        while (abs(term / max(E, 1.0))
-               ) > accuracy and (current_loop < max_loop):
-            term = self.kep_E(E, M, ecc) / self.d_kep_E(E, ecc)
-            E = E - term
-            current_loop += 1
-        return E
+def M_to_E(M, ecc):
+    if -np.pi < M < 0 or np.pi < M:
+        E0 = M - ecc
+    else:
+        E0 = M + ecc
+    E = _newton_elliptic(E0, args=(M, ecc))
+    return E
 
-def kep_E(E, M, ecc):
-    return (E - ecc * np.sin(E) - M)
+def newton_factory(func, fprime):
 
-def d_kep_E(E, ecc):
-        return (1.0 - ecc * np.cos(E))
-        
+    def jit_newton_wrapper(x0, args=(), tol=1.48e-08, maxiter=50):
+        p0 = float(x0)
+        for _ in range(maxiter):
+            fval = func(p0, *args)
+            fder = fprime(p0, *args)
+            newton_step = fval / fder
+            p = p0 - newton_step
+            if abs(p - p0) < tol:
+                return p
+            p0 = p
+
+        return np.nan
+
+    return jit_newton_wrapper
+
+_newton_elliptic = newton_factory(_kepler_equation, _kepler_equation_prime)
+
