@@ -53,7 +53,6 @@ class Satellite:
 
     @property
     def cartesian_state(self):
-        print(self.r, self.v)
         if self.r.any() == None or self.v.any() == None:
             p = self.a * (1 - self.ecc**2)
             r, v = coe2rv(mu_Earth, p, self.ecc, np.deg2rad(self.inc),
@@ -69,6 +68,11 @@ class Satellite:
     def position(self):
         r, v = self.cartesian_state
         return r
+
+    @property
+    def velocity(self):
+        r, v = self.cartesian_state
+        return v
 
     @property
     def characteristic_length(self):

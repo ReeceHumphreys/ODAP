@@ -12,24 +12,31 @@ import numpy as np
  * @return the transformed x following the power law distribution
 */
 """
+
+
 def power_law(x0, x1, n, y):
     step = pow(x1, n + 1) - pow(x0, n + 1) * y + pow(x0, n + 1)
     return pow(step, 1 / (n + 1))
 
+
 def _kepler_equation(E, M, ecc):
     return E_to_M(E, ecc) - M
 
+
 def _kepler_equation_prime(E, M, ecc):
     return 1 - ecc * np.cos(E)
+
 
 def E_to_M(E, ecc):
     M = E - ecc * np.sin(E)
     return M
 
+
 def _M_to_nu(M, ecc):
     E = M_to_E(M, ecc)
     nu = 2 * np.arctan(np.sqrt((1 + ecc) / (1 - ecc)) * np.tan(E / 2))
     return nu
+
 
 def M_to_E(M, ecc):
     if -np.pi < M < 0 or np.pi < M:
@@ -38,6 +45,7 @@ def M_to_E(M, ecc):
         E0 = M + ecc
     E = _newton_elliptic(E0, args=(M, ecc))
     return E
+
 
 def newton_factory(func, fprime):
 
@@ -56,5 +64,5 @@ def newton_factory(func, fprime):
 
     return jit_newton_wrapper
 
-_newton_elliptic = newton_factory(_kepler_equation, _kepler_equation_prime)
 
+_newton_elliptic = newton_factory(_kepler_equation, _kepler_equation_prime)

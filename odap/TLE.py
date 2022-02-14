@@ -1,4 +1,4 @@
-from .utils import _M_to_nu, newton_factory
+from .utils.utils import _M_to_nu, newton_factory
 import numpy as np
 from datetime import datetime
 
@@ -67,6 +67,7 @@ class TLE:
             nu_rad = (_M_to_nu(M, ecc) + np.pi) % (2 * np.pi) - np.pi
             self._nu = np.rad2deg(nu_rad)
         return self._nu
+
 
 def _conv_year(s):
     """Interpret a two-digit year string."""
