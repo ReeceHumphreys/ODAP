@@ -59,7 +59,7 @@ class FragmentationEvent():
                 self._output[i, 4, 0], self._output[i, 3, 0])
 
         # Mass conservation
-        #self._conserve_mass()
+        self._conserve_mass()
         count = self._output.shape[0]
 
         # Determine debris velocity
