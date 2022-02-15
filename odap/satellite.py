@@ -3,7 +3,7 @@ from .CoordTransforms import coe2rv
 from .utils.utils import circle_area
 
 # kg
-DEFAULT_MASS = 839.0
+DEFAULT_MASS = 1000.0
 
 # "m3 / (s2)"
 mu_Earth = 3.986004418e14

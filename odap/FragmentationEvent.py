@@ -39,11 +39,12 @@ class FragmentationEvent():
         # Location the explosion occured
         r = self.sats[0].position
 
-        print(count)
         # Assigning debris type and location
         self._output = np.empty((count, 7, 3))
         self._output[:, 0] = SatType.deb.index
         self._output[:, 1] = r
+
+        print(count)
 
         # Characteristic Length and AM for each debris
         for i in range(count):
@@ -99,9 +100,8 @@ class FragmentationEvent():
             new_length = self._output.shape[0]
 
         if old_length != new_length:
-            print("Removed debris to bring output mass close to input")
+            print("TODO: Removed debris to bring output mass close to input")
         else:
-            print("Adding Fragments")
             while self._input_mass > output_mass:
                 new_row = np.empty((7, 3))
                 new_row[0] = SatType.deb.index
