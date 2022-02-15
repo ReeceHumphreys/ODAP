@@ -1,7 +1,6 @@
 from numpy.random import uniform
 from numba import njit, prange
 import numpy as np
-import scipy
 from enum import IntEnum
 
 debris_category = IntEnum('Category', 'rb sc soc')

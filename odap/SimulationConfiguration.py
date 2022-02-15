@@ -1,4 +1,3 @@
-from ast import parse
 import configparser
 from enum import Enum
 

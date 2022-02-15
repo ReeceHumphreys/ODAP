@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from numba import njit as jit, prange
 from numpy import pi, sin, cos, sqrt
 from scipy import integrate

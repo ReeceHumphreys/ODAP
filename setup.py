@@ -6,7 +6,7 @@ setup(
     author='Reece Humphreys',
     author_email='reecewh@icloud.com',
     packages=['odap']
-    license='LICENSE',
+    license_files=['LICENSE'],
     description='An implementation of the NASA Standard Breakup Model in Python with associated tools and demonstrations.',
     long_description=open('README.md').read(),
 )

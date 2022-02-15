@@ -1,4 +1,4 @@
-from .utils.utils import _M_to_nu, newton_factory
+from .utils.utils import _M_to_nu
 import numpy as np
 from datetime import datetime
 
@@ -14,7 +14,7 @@ class TLE:
     """
 
     def __init__(self, name, line1, line2):
-        name = name
+        self.name = name
 
         self.norad = line1[2:7].strip()
         self.classification = line1[7]

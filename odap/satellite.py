@@ -1,11 +1,13 @@
 import numpy as np
 from .CoordTransforms import coe2rv
+from .utils.utils import circle_area
 
 # kg
 DEFAULT_MASS = 839.0
 
 # "m3 / (s2)"
 mu_Earth = 3.986004418e14
+
 
 class Satellite:
 
@@ -53,7 +55,7 @@ class Satellite:
 
     @property
     def cartesian_state(self):
-        if self.r.any() == None or self.v.any() == None:
+        if self.r.any() is None or self.v.any() is None:
             p = self.a * (1 - self.ecc**2)
             r, v = coe2rv(mu_Earth, p, self.ecc, np.deg2rad(self.inc),
                           np.deg2rad(self.raan), np.deg2rad(self.argp), np.deg2rad(self.nu))
@@ -77,3 +79,11 @@ class Satellite:
     @property
     def characteristic_length(self):
         return ((6.0 * self.mass) / (92.937 * np.pi)) ** (1.0 / 2.26)
+
+    @property
+    def area(self):
+        return circle_area(self.characteristic_length)
+
+    @property
+    def area_to_mass_ratio(self):
+        return self.area / self.mass
