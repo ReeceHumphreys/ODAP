@@ -4,7 +4,6 @@ import pandas as pd
 excel_file = "AtmosphericModelValues.xlsx"
 tabulated_values = pd.read_excel(excel_file, engine="openpyxl")
 
-
 def atmosphere_density(altitude):
     z = altitude  # [km] (Need to work in km due to given data format)
     bins = tabulated_values['Altitude Lower Bound (km)'].values

@@ -12,16 +12,25 @@ import Aerodynamics as aero
 
 def null_perts():
     return {
-        'J2': False,
-        'aero': False,
-        'moon_grav': False,
-        'solar_grav': False
+        "J2": False,
+        "aero": False,
+        "moon_grav": False,
+        "solar_grav": False,
     }
 
 
 class OrbitPropagator:
-
-    def __init__(self, states0, A, M, tspan, dt, rv=False, cb=pd.earth, perts=null_perts()):
+    def __init__(
+        self,
+        states0,
+        A,
+        M,
+        tspan,
+        dt,
+        rv=False,
+        cb=pd.earth,
+        perts=null_perts(),
+    ):
 
         # Need to add support for initializing with radius and velocity
         if rv:
@@ -45,20 +54,28 @@ class OrbitPropagator:
         self.perts = perts
 
         # Defining constants for aerodynamic drag
-        if self.perts['aero']:
-            self.K_a = np.matrix([[1, 0, 0, 0, 0, 0, 0],
-                                  [0, 2, 0, 0, 0, 0, 0],
-                                  [3/4, 0, 3/4, 0, 0, 0, 0],
-                                  [0, 3/4, 0, 1/4, 0, 0, 0],
-                                  [21/64, 0, 28/64, 0, 7/64, 0, 0],
-                                  [0, 30/64, 0, 15/64, 0, 3/64, 0]])
+        if self.perts["aero"]:
+            self.K_a = np.matrix(
+                [
+                    [1, 0, 0, 0, 0, 0, 0],
+                    [0, 2, 0, 0, 0, 0, 0],
+                    [3 / 4, 0, 3 / 4, 0, 0, 0, 0],
+                    [0, 3 / 4, 0, 1 / 4, 0, 0, 0],
+                    [21 / 64, 0, 28 / 64, 0, 7 / 64, 0, 0],
+                    [0, 30 / 64, 0, 15 / 64, 0, 3 / 64, 0],
+                ]
+            )
 
-            self.K_e = np.matrix([[0, 1, 0, 0, 0, 0, 0],
-                                  [1/2, 0, 1/2, 0, 0, 0, 0],
-                                  [0, -5/8, 0, 1/8, 0, 0, 0],
-                                  [-5/16, 0, -4/16, 0, 1/16, 0, 0],
-                                  [0, -18/128, 0, -1/128, 0, 3/128, 0],
-                                  [-18/256, 0, -19/256, 0, 2/256, 0, 3/256]])
+            self.K_e = np.matrix(
+                [
+                    [0, 1, 0, 0, 0, 0, 0],
+                    [1 / 2, 0, 1 / 2, 0, 0, 0, 0],
+                    [0, -5 / 8, 0, 1 / 8, 0, 0, 0],
+                    [-5 / 16, 0, -4 / 16, 0, 1 / 16, 0, 0],
+                    [0, -18 / 128, 0, -1 / 128, 0, 3 / 128, 0],
+                    [-18 / 256, 0, -19 / 256, 0, 2 / 256, 0, 3 / 256],
+                ]
+            )
 
     def cartesian_representation(self):
         # Returns the cartesian state representation of states for vis. purposes
@@ -68,7 +85,8 @@ class OrbitPropagator:
 
         for i in prange(self.states.shape[0]):
             cartesian_states[i, :, :] = ct.coe2rv_many_new(
-                self.states[i, :, :])
+                self.states[i, :, :]
+            )
 
         return cartesian_states
 
@@ -77,9 +95,9 @@ class OrbitPropagator:
         N_f = len(self.A)
 
         # Central body information
-        mu = self.cb['mu']
-        radius = self.cb['radius']  # [m]
-        J2 = self.cb['J2']
+        mu = self.cb["mu"]
+        radius = self.cb["radius"]  # [m]
+        J2 = self.cb["J2"]
 
         # Local variables
         delta_e = np.zeros_like(e)
@@ -90,21 +108,23 @@ class OrbitPropagator:
 
         # Current orbital information
         peri = a * (1 - e)  # [m]
-        p = a * (1 - e**2)  # [m] (Semi parameter)
-        n = np.sqrt(mu / a**3)  # (Mea motion)
+        p = a * (1 - e ** 2)  # [m] (Semi parameter)
+        n = np.sqrt(mu / a ** 3)  # (Mea motion)
 
         ############### Drag effects ###############
-        if self.perts['aero']:
-            h_p = (peri - radius)  # [m]
-            rho = aero.atmosphere_density(h_p/1e3)  # [kg * m^-3]
-            H = aero.scale_height(h_p/1e3) * 1e3  # [m]
+        if self.perts["aero"]:
+            h_p = peri - radius  # [m]
+            rho = aero.atmosphere_density(h_p / 1e3)  # [kg * m^-3]
+            H = aero.scale_height(h_p / 1e3) * 1e3  # [m]
 
-            z = a*e / H
+            z = a * e / H
             Cd = 0.7
             tilt_factor = 1
             delta = Cd * (self.A[0] * tilt_factor) / self.M[0]
 
-            e_T = np.array([np.ones_like(e), e, e**2, e**3, e**4, e**5])
+            e_T = np.array(
+                [np.ones_like(e), e, e ** 2, e ** 3, e ** 4, e ** 5]
+            )
             I_T = np.array([iv(i, z) for i in range(7)])
             k_a = delta * np.sqrt(mu * a) * rho
             k_e = k_a / a
@@ -115,9 +135,12 @@ class OrbitPropagator:
 
             # CASE e>= 0.001
             I = e >= 0.001
-            trunc_err_a = a[I]**2 * rho[I] * \
-                np.exp(-z[I]) * iv(0, z[I]) * e[I]**6
-            trunc_err_e = a[I] * rho[I] * np.exp(-z[I]) * iv(1, z[I]) * e[I]**6
+            trunc_err_a = (
+                a[I] ** 2 * rho[I] * np.exp(-z[I]) * iv(0, z[I]) * e[I] ** 6
+            )
+            trunc_err_e = (
+                a[I] * rho[I] * np.exp(-z[I]) * iv(1, z[I]) * e[I] ** 6
+            )
 
             transform_e = e_T.T.dot(self.K_e) * I_T
             coef_e = np.array([transform_e[i, i] for i in range(N_f)])[I]
@@ -132,20 +155,22 @@ class OrbitPropagator:
             delta_a[np.isnan(delta_a)] = 0
 
             # Deorbit check
-            J = h_p < 100*1e3
+            J = h_p < 100 * 1e3
             delta_a[J] = 0
             delta_e[J] = 0
 
         ###############  J2 effects  ###############
-        if self.perts['J2']:
-            base = (3/2) * self.cb['J2'] * (radius**2/p**2) * n
+        if self.perts["J2"]:
+            base = (3 / 2) * self.cb["J2"] * (radius ** 2 / p ** 2) * n
             i = np.deg2rad(i)
-            delta_omega = base * (2 - (5/2)*np.sin(i)**2)
+            delta_omega = base * (2 - (5 / 2) * np.sin(i) ** 2)
             delta_Omega = -base * np.cos(i)
             delta_omega = np.rad2deg(delta_omega) % 360
             delta_Omega = np.rad2deg(delta_Omega) % 360
 
-        return np.concatenate((delta_e, delta_a, delta_i, delta_Omega, delta_omega))
+        return np.concatenate(
+            (delta_e, delta_a, delta_i, delta_Omega, delta_omega)
+        )
 
     # Performing a regular propagation, i.e. w/ perturbations
     def propagate_perturbations(self):
@@ -158,17 +183,18 @@ class OrbitPropagator:
         T_avg = np.mean(self.states[-1, 8, :])
         times = np.arange(self.tspan[0], self.tspan[-1], self.dt)
         output = integrate.solve_ivp(
-            self.diffy_q, self.tspan, y0, t_eval=times)
+            self.diffy_q, self.tspan, y0, t_eval=times
+        )
 
         # Unpacking output (Need to drop first timestep as sudden introduction of drag causes discontinuities)
         N_f = len(self.A)
         de = output.y[0:N_f, 1:]
-        da = output.y[N_f:2*N_f, 1:]
-        di = output.y[2*N_f:3*N_f, 1:]
-        dOmega = output.y[3*N_f:4*N_f, 1:]
-        domega = output.y[4*N_f:, 1:]
-        dnu = np.random.uniform(low=0., high=360., size=domega.shape)
-        dp = da * (1 - de**2)
+        da = output.y[N_f : 2 * N_f, 1:]
+        di = output.y[2 * N_f : 3 * N_f, 1:]
+        dOmega = output.y[3 * N_f : 4 * N_f, 1:]
+        domega = output.y[4 * N_f :, 1:]
+        dnu = np.random.uniform(low=0.0, high=360.0, size=domega.shape)
+        dp = da * (1 - de ** 2)
 
         # Results
         return de, da, di, dOmega, domega, dnu, dp
@@ -179,15 +205,13 @@ class OrbitPropagator:
         times = np.arange(self.tspan[0], self.tspan[-1], self.dt)
 
         # Mean anomaly rate of change
-        M_dt = sqrt(self.cb['mu']/self.states[0, :]**3)
-
-        Nd = len(M_dt)
-        Nt = len(times)
+        M_dt = sqrt(self.cb["mu"] / self.states[0, :] ** 3)
 
         # Mean anomaly over time
-        M_t = np.deg2rad(self.states[5, :, None]) + \
-            M_dt[:, None] * times[None, :]
-        M_t = np.rad2deg(np.mod(M_t, 2*pi))
+        M_t = (
+            np.deg2rad(self.states[5, :, None]) + M_dt[:, None] * times[None, :]
+        )
+        M_t = np.rad2deg(np.mod(M_t, 2 * pi))
 
         # Eccentric anomaly over time. Note need to use E_t in rad, thus convert to deg after using it in
         # x1 and x2
@@ -198,12 +222,13 @@ class OrbitPropagator:
         E_t = np.rad2deg(E_t)
 
         # True anomaly over time
-        nu_t = (2*np.arctan2(x1, x2) % (2*pi))
+        nu_t = 2 * np.arctan2(x1, x2) % (2 * pi)
         nu_t = np.rad2deg(nu_t).T
 
         n_times = nu_t.shape[0]
         states = np.empty(
-            shape=(n_times, self.states.shape[0], self.states.shape[1]))
+            shape=(n_times, self.states.shape[0], self.states.shape[1])
+        )
 
         for i in prange(n_times):
             state = self.states.copy()
@@ -233,8 +258,7 @@ def M2E(e_deb, M_t, tolerance=1e-14):
 
             MAX_ITERATIONS = 100
             Mnorm = np.mod(M, 2 * pi)
-            E0 = M + (-1 / 2 * e ** 3 + e + (e ** 2 + 3 /
-                                             2 * cos(M) * e ** 3) * cos(M)) * sin(M)
+            E0 = M + (-1 / 2 * e ** 3 + e + (e ** 2 + 3 / 2 * cos(M) * e ** 3) * cos(M)) * sin(M)
             dE = tolerance + 1
             count = 0
             while dE > tolerance:
@@ -249,6 +273,6 @@ def M2E(e_deb, M_t, tolerance=1e-14):
                 E0 = E
                 count += 1
                 if count == MAX_ITERATIONS:
-                    print('Did not converge, increase number of iterations')
+                    print("Did not converge, increase number of iterations")
             E_t[i, j] = E
     return E_t
