@@ -1,7 +1,8 @@
 from .SimulationConfiguration import SimulationType
 from .SimulationConfiguration import SatType
 from .utils.utils import power_law
-from .utils.AMUtils import mean_1, mean_2, mean_soc, sigma_1, sigma_2, sigma_soc, alpha
+from .utils.AMUtils import mean_1, mean_2, mean_soc, sigma_1, sigma_2,\
+    sigma_soc, alpha
 import numpy as np
 
 
@@ -10,12 +11,14 @@ class FragmentationEvent():
     _input_mass = 0
     _output = np.array([])
 
-    # TODO: This is just for explosions, will need to refactor when adding collisions
+    # TODO: This is just for explosions, will need to refactor when adding
+    # collisions
     _lc_power_law_exponent = -2.6
     _deltaVelocityFactorOffset = [0.2, 1.85]
 
-    # Sats is an array containing the satellites involved in the fragmentation event
-    # Will contain one for explosions and two for collisions
+    # Sats is an array containing the satellites involved in the
+    # fragmentation event Will contain one for explosions and
+    # two for collisions
     def __init__(self, config, sats):
 
         self.sats = sats
@@ -85,11 +88,13 @@ class FragmentationEvent():
         u = n1 * 2.0 - 1.0
         theta = n2 * 2.0 * np.pi
         v = np.sqrt(1.0 - u * u)
-        return np.array([v * np.cos(theta) * velocity, v * np.sin(theta) * velocity, u * velocity])
+        return np.array([v * np.cos(theta) * velocity, v *
+                         np.sin(theta) * velocity, u * velocity])
 
     def _conserve_mass(self):
 
-        # Enforce Mass Conservation if the output mass is greater than the input mass
+        # Enforce Mass Conservation if the output mass is greater than the
+        # input mass
         output_mass = np.sum(self._output[:, 5, 0])
         old_length = self._output.shape[0]
         new_length = old_length
@@ -116,7 +121,6 @@ class FragmentationEvent():
                 new_row[5] = self._compute_mass(new_row[4, 0], new_row[3, 0])
                 self._output = np.insert(self._output, -1, new_row, 0)
                 output_mass = np.sum(self._output[:, 5, 0])
-                new_length = self._output.shape
 
             # Remove the element that causes output mass to be too large now
             self._output = np.delete(self._output, -1, 0)
@@ -139,9 +143,13 @@ class FragmentationEvent():
         if characteristic_length > 0.11:
             # Case bigger than 11 cm
             n1 = np.random.normal(
-                mean_1(self._sat_type, log_l_c), sigma_1(self._sat_type, log_l_c))
+                mean_1(
+                    self._sat_type, log_l_c), sigma_1(
+                    self._sat_type, log_l_c))
             n2 = np.random.normal(
-                mean_2(self._sat_type, log_l_c), sigma_2(self._sat_type, log_l_c))
+                mean_2(
+                    self._sat_type, log_l_c), sigma_2(
+                    self._sat_type, log_l_c))
 
             return pow(10.0, alpha(self._sat_type, log_l_c) * n1 +
                        (1 - alpha(self._sat_type, log_l_c)) * n2)
@@ -152,16 +160,21 @@ class FragmentationEvent():
         else:
             # Case between 8 cm and 11 cm
             n1 = np.random.normal(
-                mean_1(self._sat_type, log_l_c), sigma_1(self._sat_type, log_l_c))
+                mean_1(
+                    self._sat_type, log_l_c), sigma_1(
+                    self._sat_type, log_l_c))
             n2 = np.random.normal(
-                mean_2(self._sat_type, log_l_c), sigma_2(self._sat_type, log_l_c))
+                mean_2(
+                    self._sat_type, log_l_c), sigma_2(
+                    self._sat_type, log_l_c))
             n = np.random.normal(mean_soc(log_l_c), sigma_soc(log_l_c))
 
             y1 = pow(10.0, alpha(self._sat_type, log_l_c) * n1 +
                      (1.0 - alpha(self._sat_type, log_l_c)) * n2)
             y0 = pow(10.0, n)
 
-            # beta * y1 + (1 - beta) * y0 = beta * y1 + y0 - beta * y0 = y0 + beta * (y1 - y0)
+            # beta * y1 + (1 - beta) * y0 = beta * y1 + y0 - beta * y0 = y0 +
+            # beta * (y1 - y0)
             return y0 + (characteristic_length - 0.08) * (y1 - y0) / (0.03)
 
     def _fragment_count(self, min_characteristic_length):

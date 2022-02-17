@@ -109,9 +109,6 @@ class OrbitPropagator:
             k_a = delta * np.sqrt(mu * a) * rho
             k_e = k_a / a
 
-            delta_e = np.zeros_like(e)
-            delta_a = np.zeros_like(a)
-
             # CASE e < 0.001
             delta_e = np.zeros_like(e)
             delta_a = -k_a
@@ -194,7 +191,6 @@ class OrbitPropagator:
 
         # Eccentric anomaly over time. Note need to use E_t in rad, thus convert to deg after using it in
         # x1 and x2
-        E_t = np.empty(shape=(Nd, Nt), dtype=np.float32)
         E_t = M2E(self.states[1], np.deg2rad(M_t))
 
         x1 = sqrt(1 + self.states[1, :])[:, None] * sin(E_t / 2)

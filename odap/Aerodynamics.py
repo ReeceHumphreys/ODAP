@@ -21,7 +21,6 @@ def atmosphere_density(altitude):
 def reference_atmosphere_density(altitude):
     z = altitude  # [km] (Need to work in km due to given data format)
     bins = tabulated_values['Altitude Lower Bound (km)'].values
-    base_altitude = tabulated_values['Base Altitude (km)'].values
     nominal_density = tabulated_values['Nominal Density (kg/m^3)'].values
     i = np.digitize(z, bins) - 1
     result = (nominal_density[i])  # [kg•km^-3]

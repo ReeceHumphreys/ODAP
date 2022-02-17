@@ -1,18 +1,13 @@
-
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib
 from matplotlib.animation import FuncAnimation
 from matplotlib.animation import FFMpegWriter
-from matplotlib import cm
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.spatial.transform as trans
-from vpython import *
+from vpython import sphere, vector, rate
 
 
 def visualize(data, cb):
-    Earth = sphere(pos=vector(0, 0, 0),
-                   radius=cb['radius'], texture=textures.earth)
     Satelites = np.array([sphere(pos=vector(data[0, i, 0], data[0, i, 1], data[0, i, 2]), radius=cb['radius']/50, make_trail=False) for i in range(data.shape[1])]
                          )
 
@@ -72,15 +67,8 @@ def generate_visualization(data, title, cb):
     phi_inds = np.linspace(0, img.shape[1] - 1, count).round().astype(int)
     theta = theta[theta_inds]
     phi = phi[phi_inds]
-    img = img[np.ix_(theta_inds, phi_inds)]
 
     theta, phi = np.meshgrid(theta, phi)
-
-    x = radius_earth * np.sin(theta) * np.cos(phi)
-    y = radius_earth * np.sin(theta) * np.sin(phi)
-    z = radius_earth * np.cos(theta)
-
-    #ax.plot_surface(x.T, y.T, z.T, facecolors=img/255, cstride=1, rstride=1)
 
     # Initialize scatters
     scatters = [ax.scatter(data[0][i, 0:1], data[0][i, 1:2], data[0][i, 2:])

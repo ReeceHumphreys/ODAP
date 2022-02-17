@@ -1,5 +1,4 @@
 import numpy as np
-from numpy import cross
 from numba import njit as jit, prange
 from numpy.core.umath import cos, sin, sqrt
 from numpy.linalg import norm
@@ -19,7 +18,6 @@ mu = 398600.4418  # km^3s^-2
 
 @jit
 def rotation_matrix(angle, axis):
-
     c = cos(angle)
     s = sin(angle)
 
@@ -35,9 +33,8 @@ def rotation_matrix(angle, axis):
 
 @jit
 def rv_pqw(k, p, ecc, nu):
-    pqw = np.array([[cos(nu), sin(nu), 0], [-sin(nu), ecc + cos(nu), 0]]) * np.array(
-        [[p / (1 + ecc * cos(nu))], [sqrt(k / p)]]
-    )
+    pqw = np.array([[cos(nu), sin(nu), 0], [-sin(nu), ecc + cos(nu), 0]]
+                   ) * np.array([[p / (1 + ecc * cos(nu))], [sqrt(k / p)]])
     return pqw
 
 
@@ -108,12 +105,16 @@ Converting from Cartesian to Keplerian
 
 
 def rv2coe(r, v, mu):
-    ''' Converts a position, `r`, and a velocity, `v` to the set of keplerian elements.'''
+    '''
+    Converts a position, `r`, and a velocity, `v` to the set of keplerian
+    elements.
+    '''
     """
     Parameters
     ----------
     r: array (3, n)
-       Position of the body in 3 dim. Measured using center of Earth as origin. (m)
+       Position of the body in 3 dim. Measured using center of Earth
+       as origin. (m)
     v: array (3, n)
        Velocity of the body in 3 dim relative to Earth. (m / s)
 
@@ -133,9 +134,9 @@ def rv2coe(r, v, mu):
 
     def testAngle(test, angle):
         """Checks test for sign and returns corrected angle"""
-        angle *= 180./np.pi
-        I = test < 0
-        angle[I] = 360. - angle[I]
+        angle *= 180. / np.pi
+        index = test < 0
+        angle[index] = 360. - angle[index]
         return angle
 
     r_hat = np.divide(r, norm(r, axis=1)[:, None])
@@ -149,43 +150,43 @@ def rv2coe(r, v, mu):
 
     # Longitude of the ascending node, Omega
     Omega_hat = np.cross(np.array([0, 0, 1])[None, :], p)
-    Omega = np.arccos(Omega_hat[:, 0]/norm(Omega_hat, axis=1))
+    Omega = np.arccos(Omega_hat[:, 0] / norm(Omega_hat, axis=1))
     Omega = testAngle(Omega_hat[:, 1], Omega)
 
     # Argument of periapsis, omega
-    omega = np.arccos(np.sum(Omega_hat*e, axis=1) /
-                      (norm(Omega_hat, axis=1)*norm(e, axis=1)))
+    omega = np.arccos(np.sum(Omega_hat * e, axis=1) /
+                      (norm(Omega_hat, axis=1) * norm(e, axis=1)))
     B = e[:, 2] < 0
-    omega[B] = 2*np.pi - omega[B]
+    omega[B] = 2 * np.pi - omega[B]
     omega *= 180. / np.pi
 
     # True Anomaly, nu
-    nu = np.arccos(np.sum(e*r, axis=1) / (norm(e, axis=1) * norm(r, axis=1)))
-    B = np.sum(r*v, axis=1) < 0
-    nu[B] = 2*np.pi - nu[B]
+    nu = np.arccos(np.sum(e * r, axis=1) / (norm(e, axis=1) * norm(r, axis=1)))
+    B = np.sum(r * v, axis=1) < 0
+    nu[B] = 2 * np.pi - nu[B]
     nu *= 180. / np.pi
 
     # Inclination, i
-    i = np.arccos(p[:, 2] / norm(p, axis=1))*180./np.pi
+    i = np.arccos(p[:, 2] / norm(p, axis=1)) * 180. / np.pi
 
     # Eccentric anomaly, E
-    E = 2*np.arctan(np.tan(np.deg2rad(nu)/2) /
-                    np.sqrt((1 + e_mag)/(1 - e_mag)))
+    E = 2 * np.arctan(np.tan(np.deg2rad(nu) / 2) /
+                      np.sqrt((1 + e_mag) / (1 - e_mag)))
 
     # Mean anomaly, M
-    M = np.mod(E - e_mag * np.sin(E), 2*np.pi)
-    M *= 180./np.pi
+    M = np.mod(E - e_mag * np.sin(E), 2 * np.pi)
+    M *= 180. / np.pi
 
     # Semi-Major axis, a
     R = norm(r, axis=1)
     V = norm(v, axis=1)
-    a = 1/((2 / R) - (V*V / mu))
+    a = 1 / ((2 / R) - (V * V / mu))
 
     # Semi-parmeter, p_semi
     p_semi = norm(p, axis=1)**2 / mu
 
     # Orbital period
-    T = 2*np.pi * np.sqrt(a**3 / mu)
+    T = 2 * np.pi * np.sqrt(a**3 / mu)
 
     # Keplerian State + Extra info
     ks = np.array([a, e_mag, i, Omega, omega, M, nu, p_semi, T, E])
