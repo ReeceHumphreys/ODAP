@@ -1,16 +1,21 @@
-.. odap documentation master file, created by
-   sphinx-quickstart on Sat Jan 22 23:59:05 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to odap's documentation!
-================================
-
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :hidden:
 
-   modules
+   Home page <self>
+   API reference <_autosummary/odap>
+
+Welcome to Orbital Debris Analysis with Python's documentation
+=====================================================
+
+An implementation of the NASA Standard Breakup Model in Python with associated tools and demonstrations.
+
+
+You can:
+
+* Item 1
+* Item 2
+* Item 3
+* Item 4
 
 Indices and tables
 ==================
