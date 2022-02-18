@@ -1,6 +1,5 @@
 from .utils.utils import _M_to_nu
 import numpy as np
-from datetime import datetime
 
 # "m3 / (s2)"
 mu_Earth = 3.986004418e14
@@ -43,18 +42,20 @@ class TLE:
     def epoch(self):
         """Epoch of the TLE."""
         if self._epoch is None:
-            year = np.datetime64(self.epoch_year - 1970, 'Y')
+            year = np.datetime64(self.epoch_year - 1970, "Y")
             day = np.timedelta64(
-                int((self.epoch_day - 1) * 86400 * 10**6), 'us')
-            self._epoch = Time(year + day, format='datetime64', scale='utc')
+                int((self.epoch_day - 1) * 86400 * 10 ** 6), "us"
+            )
+            self._epoch = year + day
         return self._epoch
 
     @property
     def a(self):
         """Semi-major axis of TLE."""
         if self._a is None:
-            self._a = (mu_Earth / (self.n * np.pi / 43200)
-                       ** 2) ** (1/3) / 1000
+            self._a = (mu_Earth / (self.n * np.pi / 43200) ** 2) ** (
+                1 / 3
+            ) / 1000
         return self._a
 
     @property
@@ -82,7 +83,7 @@ def _parse_decimal(s):
     >>> _parse_decimal('378')
     0.378
     """
-    return float('.' + s)
+    return float("." + s)
 
 
 def _parse_float(s):
@@ -90,4 +91,4 @@ def _parse_float(s):
     >>> _parse_float(' 12345-3')
     0.00012345
     """
-    return float(s[0] + '.' + s[1:6] + 'e' + s[6:8])
+    return float(s[0] + "." + s[1:6] + "e" + s[6:8])

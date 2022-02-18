@@ -1,20 +1,35 @@
+from odap.BreakupModel.Explosion import Explosion
+from odap.BreakupModel.Collision import Collision
 from .SimulationConfiguration import SimulationType
 from .SimulationConfiguration import SatType
-from .utils.utils import power_law
-from .utils.AMUtils import mean_1, mean_2, mean_soc, sigma_1, sigma_2,\
-    sigma_soc, alpha
+from ..utils.utils import power_law
+from ..utils.AMUtils import (
+    mean_1,
+    mean_2,
+    mean_soc,
+    sigma_1,
+    sigma_2,
+    sigma_soc,
+    alpha,
+)
 import numpy as np
 
 
-class FragmentationEvent():
+class FragmentationEvent:
 
-    _input_mass = 0
     _output = np.array([])
 
-    # TODO: This is just for explosions, will need to refactor when adding
-    # collisions
-    _lc_power_law_exponent = -2.6
-    _deltaVelocityFactorOffset = [0.2, 1.85]
+    @property
+    def simulation_type(self):
+        return self._simulation_type
+
+    @simulation_type.setter
+    def simulation_type(self, value):
+        self._simulation_type = value
+        if value == SimulationType.explosion:
+            self._event = Explosion()
+        else:
+            self._event = Collision()
 
     # Sats is an array containing the satellites involved in the
     # fragmentation event Will contain one for explosions and
@@ -24,21 +39,14 @@ class FragmentationEvent():
         self.sats = sats
 
         # Explosion or Collision
-        self._simulation_type = config.simulationType
-
-        # Setting the mass before the fragmentation event
-        self._input_mass = np.sum([sat.mass for sat in sats])
-
-        # Categorization of satellite: RB, SC, or SOC
-        self._sat_type = config.sat_type
+        self.simulation_type = config.simulationType
 
         # Setting characteristic lengths
         self._min_characteristic_length = config.minimalCharacteristicLength
-        self._max_characteristic_length = sats[0].characteristic_length
 
     def run(self):
         # Compute the number of fragments generate in the fragmentation event
-        count = self._fragment_count(self._min_characteristic_length)
+        count = self._event.fragment_count(self.sats, self._min_characteristic_length)
         # Location the explosion occured
         r = self.sats[0].position
 
@@ -59,7 +67,8 @@ class FragmentationEvent():
             self._output[i, 4] = self._compute_Area(self._output[i, 2, 0])
             # Compute Mass using area and AM ratio
             self._output[i, 5] = self._compute_mass(
-                self._output[i, 4, 0], self._output[i, 3, 0])
+                self._output[i, 4, 0], self._output[i, 3, 0]
+            )
 
         # Mass conservation
         self._conserve_mass()
@@ -69,8 +78,10 @@ class FragmentationEvent():
         self._output[:, 6] = self.sats[0].velocity
         for i in range(count):
             chi = np.log10(self._output[i, 3, 0])
-            mean = self._deltaVelocityFactorOffset[0] * \
-                chi + self._deltaVelocityFactorOffset[1]
+            mean = (
+                self._event.delta_velocity_offset[0] * chi
+                + self._event.delta_velocity_offset[1]
+            )
             sigma = 0.4
             n = np.random.normal(mean, sigma)
             velocity_scalar = pow(10.0, n)
@@ -88,8 +99,13 @@ class FragmentationEvent():
         u = n1 * 2.0 - 1.0
         theta = n2 * 2.0 * np.pi
         v = np.sqrt(1.0 - u * u)
-        return np.array([v * np.cos(theta) * velocity, v *
-                         np.sin(theta) * velocity, u * velocity])
+        return np.array(
+            [
+                v * np.cos(theta) * velocity,
+                v * np.sin(theta) * velocity,
+                u * velocity,
+            ]
+        )
 
     def _conserve_mass(self):
 
@@ -99,7 +115,7 @@ class FragmentationEvent():
         old_length = self._output.shape[0]
         new_length = old_length
 
-        while output_mass > self._input_mass:
+        while output_mass > self._event.input_mass:
             self._output = np.delete(self._output, -1, 0)
             output_mass = np.sum(self._output[:, 5, 0])
             new_length = self._output.shape[0]
@@ -107,7 +123,7 @@ class FragmentationEvent():
         if old_length != new_length:
             print("TODO: Removed debris to bring output mass close to input")
         else:
-            while self._input_mass > output_mass:
+            while self._event.input_mass > output_mass:
                 new_row = np.empty((7, 3))
                 new_row[0] = SatType.deb.index
                 new_row[1] = self.sats[0].position
@@ -143,34 +159,40 @@ class FragmentationEvent():
         if characteristic_length > 0.11:
             # Case bigger than 11 cm
             n1 = np.random.normal(
-                mean_1(
-                    self._sat_type, log_l_c), sigma_1(
-                    self._sat_type, log_l_c))
+                mean_1(self._event.sat_type, log_l_c),
+                sigma_1(self._event.sat_type, log_l_c),
+            )
             n2 = np.random.normal(
-                mean_2(
-                    self._sat_type, log_l_c), sigma_2(
-                    self._sat_type, log_l_c))
+                mean_2(self._event.sat_type, log_l_c),
+                sigma_2(self._event.sat_type, log_l_c),
+            )
 
-            return pow(10.0, alpha(self._sat_type, log_l_c) * n1 +
-                       (1 - alpha(self._sat_type, log_l_c)) * n2)
-        elif (characteristic_length < 0.08):
+            return pow(
+                10.0,
+                alpha(self._event.sat_type, log_l_c) * n1
+                + (1 - alpha(self._event.sat_type, log_l_c)) * n2,
+            )
+        elif characteristic_length < 0.08:
             # Case smaller than 8 cm
             n = np.random.normal(mean_soc(log_l_c), sigma_soc(log_l_c))
             return pow(10.0, n)
         else:
             # Case between 8 cm and 11 cm
             n1 = np.random.normal(
-                mean_1(
-                    self._sat_type, log_l_c), sigma_1(
-                    self._sat_type, log_l_c))
+                mean_1(self._event.sat_type, log_l_c),
+                sigma_1(self._event.sat_type, log_l_c),
+            )
             n2 = np.random.normal(
-                mean_2(
-                    self._sat_type, log_l_c), sigma_2(
-                    self._sat_type, log_l_c))
+                mean_2(self._event.sat_type, log_l_c),
+                sigma_2(self._event.sat_type, log_l_c),
+            )
             n = np.random.normal(mean_soc(log_l_c), sigma_soc(log_l_c))
 
-            y1 = pow(10.0, alpha(self._sat_type, log_l_c) * n1 +
-                     (1.0 - alpha(self._sat_type, log_l_c)) * n2)
+            y1 = pow(
+                10.0,
+                alpha(self._event.sat_type, log_l_c) * n1
+                + (1.0 - alpha(self._event.sat_type, log_l_c)) * n2,
+            )
             y0 = pow(10.0, n)
 
             # beta * y1 + (1 - beta) * y0 = beta * y1 + y0 - beta * y0 = y0 +
@@ -178,16 +200,19 @@ class FragmentationEvent():
             return y0 + (characteristic_length - 0.08) * (y1 - y0) / (0.03)
 
     def _fragment_count(self, min_characteristic_length):
-        if self._simulation_type == SimulationType.explosion:
+        if self.simulation_type == SimulationType.explosion:
             S = 1
-            return int(6 * S * (min_characteristic_length)**(-1.6))
+            return int(6 * S * (min_characteristic_length) ** (-1.6))
         else:
             print("Computing Count for Collision")
 
     def _characteristic_length_distribution(self):
         # Sampling a value from uniform distribution
         y = np.random.uniform(0.0, 1.0)
-        return power_law(self._min_characteristic_length,
-                         self._max_characteristic_length,
-                         self._lc_power_law_exponent,
-                         y)
+        return power_law(
+            self._min_characteristic_length,
+            self._event.max_characteristic_length,
+            self._event.lc_power_law_exponent,
+            y,
+        )
+

@@ -1,6 +1,7 @@
 import numpy as np
 from .CoordTransforms import coe2rv
 from .utils.utils import circle_area
+from .BreakupModel.SimulationConfiguration import SatType
 
 # kg
 DEFAULT_MASS = 1000.0
@@ -14,7 +15,7 @@ class Satellite:
     # All satellites should have orbital elements.
     # Then the carteisan state is constructed if needed
 
-    def __init__(self, tle, mass=DEFAULT_MASS):
+    def __init__(self, tle, mass=DEFAULT_MASS, type=SatType.soc):
         """
         Constructs all the necessary attributes for the satellite object from a TLE.
 
@@ -39,6 +40,8 @@ class Satellite:
         # Setting computed properties to None
         self.r = np.array([None, None, None])
         self.v = np.array([None, None, None])
+
+        self.type = type
 
     @property
     def cartesian_state(self):
