@@ -3,14 +3,15 @@ from enum import Enum
 
 
 class SimulationType(Enum):
-    explosion = 'EXPLOSION'
-    collision = 'COLLISION'
+    explosion = "EXPLOSION"
+    collision = "COLLISION"
+
 
 class SatType(Enum):
-    rb = 'RB'
-    sat = 'SC'
-    soc = 'SOC'
-    deb = 'DEB'
+    rb = "RB"
+    sat = "SC"
+    soc = "SOC"
+    deb = "DEB"
 
     @property
     def index(self):
@@ -23,7 +24,6 @@ class SatType(Enum):
         else:
             return 3
 
-    
 
 class SimulationConfiguration:
 
@@ -32,12 +32,12 @@ class SimulationConfiguration:
         parser = configparser.ConfigParser()
         parser.read(filePath)
         self._minimalCharacteristicLength = float(
-            parser.get('simulation', 'minimalCharacteristicLength'))
-        self._simulationType = SimulationType(
-            parser.get('simulation', 'simulationType'))
-        self._sat_type = SatType(
-            parser.get('simulation', 'satType')
+            parser.get("simulation", "minimalCharacteristicLength")
         )
+        self._simulationType = SimulationType(
+            parser.get("simulation", "simulationType")
+        )
+        self._sat_type = SatType(parser.get("simulation", "satType"))
 
     @property
     def minimalCharacteristicLength(self):

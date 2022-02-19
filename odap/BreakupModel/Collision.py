@@ -1,31 +1,70 @@
 import numpy as np
 
-from .Breakup import Breakup
-from .SimulationConfiguration import SatType
+from odap.BreakupModel.Breakup import Breakup
+from odap.BreakupModel.SimulationConfiguration import SatType
 
 
 class Collision(Breakup):
     @property
     def lc_power_law_exponent(self):
+        """
+        Gets the exponents used in the characteristic length power law
+        :py:meth:`odap.BreakupModel.FragmentationEvent._characteristic_length_distribution`.
+        """
         return -2.71
 
     @property
     def delta_velocity_offset(self):
+        """
+        Gets the offset factors used in determining the change in velocity for each
+        fragment.
+        """
         return [0.9, 2.9]
 
     @property
     def max_characteristic_length(self):
+        """
+        Gets the largest characteristic length possible for the fragmentation event.
+        For collisions, this is the characteristic length of the more massive satellite.
+        """
         return self._max_characteristic_length
 
     @property
     def sat_type(self):
+        """
+        Gets the satellite type for the fragmentation event. In the case that either
+        of the satellites involved in the collision are rocket bodies, the type is
+        rocket body. Otherwise, the default is a spacecraft
+        """
         return self._sat_type
 
     @property
     def input_mass(self):
+        """
+        Gets the input mass for the fragmentation event. For collisions, this is the sum
+        of the massses of both satellites.
+        """
         return self._input_mass
 
     def fragment_count(self, satellites, min_characteristic_length):
+        """
+        Determines the number of debris fragments produced by the fragmentation event.
+        Noteably, this quantity can change if mass conservation is being enforced.
+
+        Parameters
+        ----------
+        satellites : np.array([Satellite])
+            The satellites involved in the collision. Maximum of two.
+        min_characteristic_length : float
+            The smallest characteristic length size we wish to generate.
+            Note, the smaller the min_characteristic_length, the longer the simulation
+            will take to run and the more debris will be generated.
+            
+        Returns
+        -------
+        int
+            The number of debris generated,
+        """
         satellite_1 = satellites[0]
         satellite_2 = satellites[1]
         self._max_characteristic_length = [
@@ -63,4 +102,6 @@ class Collision(Breakup):
             self._is_catastrophic = True
             mass = satellite_1.mass + satellite_2.mass
 
-        return int(0.1 * pow(mass, 0.75) * pow(min_characteristic_length, -1.71))
+        return int(
+            0.1 * pow(mass, 0.75) * pow(min_characteristic_length, -1.71)
+        )

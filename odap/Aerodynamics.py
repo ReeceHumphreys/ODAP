@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-excel_file = "AtmosphericModelValues.xlsx"
+excel_file = "../data/AtmosphericModelValues.xlsx"
 tabulated_values = pd.read_excel(excel_file, engine="openpyxl")
 
 def atmosphere_density(altitude):

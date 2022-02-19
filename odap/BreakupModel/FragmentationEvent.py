@@ -1,7 +1,7 @@
 from odap.BreakupModel.Explosion import Explosion
 from odap.BreakupModel.Collision import Collision
-from .SimulationConfiguration import SimulationType
-from .SimulationConfiguration import SatType
+from odap.BreakupModel.SimulationConfiguration import SimulationType
+from odap.BreakupModel.SimulationConfiguration import SatType
 from ..utils.utils import power_law
 from ..utils.AMUtils import (
     mean_1,
@@ -198,13 +198,6 @@ class FragmentationEvent:
             # beta * y1 + (1 - beta) * y0 = beta * y1 + y0 - beta * y0 = y0 +
             # beta * (y1 - y0)
             return y0 + (characteristic_length - 0.08) * (y1 - y0) / (0.03)
-
-    def _fragment_count(self, min_characteristic_length):
-        if self.simulation_type == SimulationType.explosion:
-            S = 1
-            return int(6 * S * (min_characteristic_length) ** (-1.6))
-        else:
-            print("Computing Count for Collision")
 
     def _characteristic_length_distribution(self):
         # Sampling a value from uniform distribution

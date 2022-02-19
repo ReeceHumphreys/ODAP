@@ -5,9 +5,9 @@ from scipy import integrate
 from scipy.special import iv
 
 # User defined libearayr
-import planetary_data as pd
-import CoordTransforms as ct
-import Aerodynamics as aero
+import data.planetary_data as pd
+import odap.CoordTransforms as ct
+import odap.Aerodynamics as aero
 
 
 def null_perts():
