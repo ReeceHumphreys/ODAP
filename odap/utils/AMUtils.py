@@ -1,4 +1,4 @@
-from ..BreakupModel.SimulationConfiguration import SatType
+from ..fragmentation.configuration import SatType
 
 
 def distribution_constant(

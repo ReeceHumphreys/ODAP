@@ -1,4 +1,4 @@
-from .utils.utils import _M_to_nu
+from ..utils.utils import _M_to_nu
 import numpy as np
 
 # "m3 / (s2)"

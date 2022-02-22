@@ -1,7 +1,5 @@
-from odap.BreakupModel.Explosion import Explosion
-from odap.BreakupModel.Collision import Collision
-from odap.BreakupModel.SimulationConfiguration import SimulationType
-from odap.BreakupModel.SimulationConfiguration import SatType
+from .breakup_event import Explosion, Collision
+from .configuration import SimulationType, SatType
 from ..utils.utils import power_law
 from ..utils.AMUtils import (
     mean_1,
@@ -46,7 +44,9 @@ class FragmentationEvent:
 
     def run(self):
         # Compute the number of fragments generate in the fragmentation event
-        count = self._event.fragment_count(self.sats, self._min_characteristic_length)
+        count = self._event.fragment_count(
+            self.sats, self._min_characteristic_length
+        )
         # Location the explosion occured
         r = self.sats[0].position
 

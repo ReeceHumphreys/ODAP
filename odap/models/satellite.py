@@ -1,7 +1,7 @@
 import numpy as np
-from .CoordTransforms import coe2rv
-from .utils.utils import circle_area
-from .BreakupModel.SimulationConfiguration import SatType
+from ..CoordTransforms import coe2rv
+from ..utils.utils import circle_area
+from ..fragmentation.configuration import SatType
 
 # kg
 DEFAULT_MASS = 1000.0
