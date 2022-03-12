@@ -27,12 +27,11 @@
    :recursive:
 
    odap.Aerodynamics
+   odap.BreakupModel
    odap.CoordTransforms
-   odap.FragmentationEvent
    odap.OrbitalElements
    odap.Perturbations
    odap.Satellite
-   odap.SimulationConfiguration
    odap.TLE
    odap.utils
    odap.visualize_deb

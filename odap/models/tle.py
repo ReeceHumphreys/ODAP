@@ -1,8 +1,8 @@
 from ..utils.utils import _M_to_nu
 import numpy as np
 
-# "m3 / (s2)"
-mu_Earth = 3.986004418e14
+# unit: [km^3 / s^2]
+mu_Earth = 3.986004418e5
 
 
 class TLE:
@@ -15,6 +15,7 @@ class TLE:
     def __init__(self, name, line1, line2):
         self.name = name
 
+        # Parsing Line 1
         self.norad = line1[2:7].strip()
         self.classification = line1[7]
         self.int_desig = line1[9:17].strip()
@@ -25,13 +26,14 @@ class TLE:
         self.bstar = _parse_float(line1[53:61])
         self.set_num = line1[64:68].strip()
 
-        self.inc = float(line2[8:16])
-        self.raan = float(line2[17:25])
-        self.ecc = _parse_decimal(line2[26:33])
-        self.argp = float(line2[34:42])
-        self.M = float(line2[43:51])
-        self.n = float(line2[52:63])
-        self.rev_num = line2[63:68].strip()
+        # Parsing Line 2
+        self.inc = float(line2[8:16])  # unit: [deg]
+        self.raan = float(line2[17:25])  # unit: [deg]
+        self.ecc = _parse_decimal(line2[26:33])  # unit: []
+        self.argp = float(line2[34:42])  # unit: [deg]
+        self.M = float(line2[43:51])  # unit: [deg]
+        self.n = float(line2[52:63])  # unit: [Revs per day]
+        self.rev_num = line2[63:68].strip()  # unit: [Revs]
 
         # Setting properties that need computing to `None`
         self._epoch = None
@@ -49,24 +51,40 @@ class TLE:
             self._epoch = year + day
         return self._epoch
 
+
     @property
     def a(self):
-        """Semi-major axis of TLE."""
+        """
+        Semi-major axis.
+
+        Returns
+        -------
+        float
+            The semi-major axis of the satellite specified by the tle. Unit: [km]
+        """
         if self._a is None:
             self._a = (mu_Earth / (self.n * np.pi / 43200) ** 2) ** (
                 1 / 3
-            ) / 1000
+            )
         return self._a
 
     @property
     def nu(self):
-        """True anomaly."""
+        """
+        True anomaly.
+
+        Returns
+        -------
+        float
+            The true anomaly of the satellite specified by the tle. Unit: [deg]
+        """
         if self._nu is None:
             # Wrap M to [-pi, pi]
             M = (np.deg2rad(self.M) + np.pi) % (2 * np.pi) - np.pi
             ecc = self.ecc
             nu_rad = (_M_to_nu(M, ecc) + np.pi) % (2 * np.pi) - np.pi
-            self._nu = np.rad2deg(nu_rad)
+            # Wrap nu t0 [0, 360]
+            self._nu = np.rad2deg(nu_rad) % 360
         return self._nu
 
 

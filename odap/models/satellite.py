@@ -1,13 +1,13 @@
 import numpy as np
 from ..CoordTransforms import coe2rv
 from ..utils.utils import circle_area
-from ..fragmentation.configuration import SatType
+from nasa_sbm.configuration import SatType
 
 # kg
 DEFAULT_MASS = 1000.0
 
-# "m3 / (s2)"
-mu_Earth = 3.986004418e14
+# unit: [km^3 / s^2]
+mu_Earth = 3.986004418e5
 
 
 class Satellite:
