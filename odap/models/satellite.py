@@ -1,6 +1,6 @@
 import numpy as np
 from ..CoordTransforms import coe2rv
-from ..utils.utils import circle_area
+from ..utils import circle_area
 from nasa_sbm.configuration import SatType
 
 # kg
@@ -63,11 +63,13 @@ class Satellite:
     # Calculates the Characteristic Length assuming the mass is formed like a
     # sphere.
 
+    # unit: [km]
     @property
     def position(self):
         r, v = self.cartesian_state
         return r
 
+    # unit: [km/s]
     @property
     def velocity(self):
         r, v = self.cartesian_state

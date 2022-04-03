@@ -9,6 +9,8 @@ import data.planetary_data as pd
 import odap.CoordTransforms as ct
 import odap.Aerodynamics as aero
 
+from .utils import E_to_M, Nu_to_E
+
 
 def null_perts():
     return {
@@ -34,10 +36,10 @@ class OrbitPropagator:
 
         # Need to add support for initializing with radius and velocity
         if rv:
-            self.states = 0
+            self.inital_state = 0
 
         else:
-            self.states = states0
+            self.inital_state = states0
 
         # Setting the areas and masses
         self.A = A
@@ -77,19 +79,6 @@ class OrbitPropagator:
                 ]
             )
 
-    def cartesian_representation(self):
-        # Returns the cartesian state representation of states for vis. purposes
-        N_t = self.states.shape[0]
-        N_frag = self.states.shape[2]
-        cartesian_states = np.empty(shape=(N_t, 2, N_frag, 3))
-
-        for i in prange(self.states.shape[0]):
-            cartesian_states[i, :, :] = ct.coe2rv_many_new(
-                self.states[i, :, :]
-            )
-
-        return cartesian_states
-
     def diffy_q(self, t, state):
         e, a, i, Omega, omega = state.reshape(5, len(self.A))
         N_f = len(self.A)
@@ -108,8 +97,8 @@ class OrbitPropagator:
 
         # Current orbital information
         peri = a * (1 - e)  # [m]
-        p = a * (1 - e ** 2)  # [m] (Semi parameter)
-        n = np.sqrt(mu / a ** 3)  # (Mea motion)
+        p = a * (1 - e**2)  # [m] (Semi parameter)
+        n = np.sqrt(mu / a**3)  # (Mea motion)
 
         ############### Drag effects ###############
         if self.perts["aero"]:
@@ -123,7 +112,7 @@ class OrbitPropagator:
             delta = Cd * (self.A[0] * tilt_factor) / self.M[0]
 
             e_T = np.array(
-                [np.ones_like(e), e, e ** 2, e ** 3, e ** 4, e ** 5]
+                [np.ones_like(e), e, e**2, e**3, e**4, e**5]
             )
             I_T = np.array([iv(i, z) for i in range(7)])
             k_a = delta * np.sqrt(mu * a) * rho
@@ -161,7 +150,7 @@ class OrbitPropagator:
 
         ###############  J2 effects  ###############
         if self.perts["J2"]:
-            base = (3 / 2) * self.cb["J2"] * (radius ** 2 / p ** 2) * n
+            base = (3 / 2) * self.cb["J2"] * (radius**2 / p**2) * n
             i = np.deg2rad(i)
             delta_omega = base * (2 - (5 / 2) * np.sin(i) ** 2)
             delta_Omega = -base * np.cos(i)
@@ -176,11 +165,11 @@ class OrbitPropagator:
     def propagate_perturbations(self):
 
         # Initial states
-        a0, e0, i0, Omega0, omega0 = self.states[-1, :5, :]
+        a0, e0, i0, Omega0, omega0 = self.inital_state[5, :]
         y0 = np.concatenate((e0, a0, i0, Omega0, omega0))
 
         # Propagation time
-        T_avg = np.mean(self.states[-1, 8, :])
+        T_avg = np.mean(self.inital_state[-1, 8, :])
         times = np.arange(self.tspan[0], self.tspan[-1], self.dt)
         output = integrate.solve_ivp(
             self.diffy_q, self.tspan, y0, t_eval=times
@@ -194,7 +183,7 @@ class OrbitPropagator:
         dOmega = output.y[3 * N_f : 4 * N_f, 1:]
         domega = output.y[4 * N_f :, 1:]
         dnu = np.random.uniform(low=0.0, high=360.0, size=domega.shape)
-        dp = da * (1 - de ** 2)
+        dp = da * (1 - de**2)
 
         # Results
         return de, da, di, dOmega, domega, dnu, dp
@@ -202,46 +191,48 @@ class OrbitPropagator:
     # Performing a Keplerian propagation, i.e. w/o perturbations
     def propagate_orbit(self):
 
+        a0 = self.inital_state[:, 0]
+        e0 = self.inital_state[:, 1]
+        i0 = self.inital_state[:, 2]
+        Omega0 = self.inital_state[:, 3]
+        omega0 = self.inital_state[:, 4]
+        nu0 = self.inital_state[:, 5]
+
         times = np.arange(self.tspan[0], self.tspan[-1], self.dt)
 
-        # Mean anomaly rate of change
-        M_dt = sqrt(self.cb["mu"] / self.states[0, :] ** 3)
+        # # Mean anomaly rate of change
+        n = sqrt(self.cb["mu"] / a0**3)
 
         # Mean anomaly over time
-        M_t = (
-            np.deg2rad(self.states[5, :, None]) + M_dt[:, None] * times[None, :]
-        )
-        M_t = np.rad2deg(np.mod(M_t, 2 * pi))
+        M0 = E_to_M(Nu_to_E(nu0, e0), e0) % 2 * np.pi
+        M_dt = n[None, :] * times[:, None]
+        M_t = M0 + M_dt
+        M_t = np.deg2rad(np.rad2deg(np.mod(M_t, 2 * pi)))
 
         # Eccentric anomaly over time. Note need to use E_t in rad, thus convert to deg after using it in
         # x1 and x2
-        E_t = M2E(self.states[1], np.deg2rad(M_t))
+        E_t = M2E(e0, M_t.T)
 
-        x1 = sqrt(1 + self.states[1, :])[:, None] * sin(E_t / 2)
-        x2 = sqrt(1 - self.states[1, :])[:, None] * cos(E_t / 2)
-        E_t = np.rad2deg(E_t)
+        x1 = sqrt(1 + e0)[:, None] * sin(E_t / 2)
+        x2 = sqrt(1 - e0)[:, None] * cos(E_t / 2)
 
-        # True anomaly over time
+        # # True anomaly over time
         nu_t = 2 * np.arctan2(x1, x2) % (2 * pi)
-        nu_t = np.rad2deg(nu_t).T
 
-        n_times = nu_t.shape[0]
-        states = np.empty(
-            shape=(n_times, self.states.shape[0], self.states.shape[1])
-        )
-
+        n_times = nu_t.shape[1]
+        states = np.empty(shape=(n_times, len(a0), 6))
         for i in prange(n_times):
-            state = self.states.copy()
-            state[6, :] = nu_t[i, :]
+            state = self.inital_state.copy()
+            state[:, 5] = nu_t[:, i]
             states[i] = state
 
         # Update internal states
-        self.states = states
+        return states
 
 
 # Modified from OrbitalPy.utilities
 @jit(parallel=True, fastmath=True)
-def M2E(e_deb, M_t, tolerance=1e-14):
+def M2E(e_deb, M_t, tolerance=1e-5):
     # Convert mean anomaly to eccentric anomaly.
     # Implemented from [A Practical Method for Solving the Kepler Equation][1]
     # by Marc A. Murison from the U.S. Naval Observatory
@@ -258,7 +249,11 @@ def M2E(e_deb, M_t, tolerance=1e-14):
 
             MAX_ITERATIONS = 100
             Mnorm = np.mod(M, 2 * pi)
-            E0 = M + (-1 / 2 * e ** 3 + e + (e ** 2 + 3 / 2 * cos(M) * e ** 3) * cos(M)) * sin(M)
+            E0 = M + (
+                -1 / 2 * e**3
+                + e
+                + (e**2 + 3 / 2 * cos(M) * e**3) * cos(M)
+            ) * sin(M)
             dE = tolerance + 1
             count = 0
             while dE > tolerance:

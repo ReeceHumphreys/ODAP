@@ -1,4 +1,4 @@
-from ..utils.utils import _M_to_nu
+from ..utils import _M_to_nu
 import numpy as np
 
 # unit: [km^3 / s^2]
@@ -63,9 +63,7 @@ class TLE:
             The semi-major axis of the satellite specified by the tle. Unit: [km]
         """
         if self._a is None:
-            self._a = (mu_Earth / (self.n * np.pi / 43200) ** 2) ** (
-                1 / 3
-            )
+            self._a = mu_Earth**(1/3) / ((2 * self.n * np.pi)/ 86400)**(2/3)
         return self._a
 
     @property
