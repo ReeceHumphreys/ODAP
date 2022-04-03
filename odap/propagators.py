@@ -6,8 +6,7 @@ from scipy.special import iv
 
 # User defined libearayr
 import data.planetary_data as pd
-import odap.CoordTransforms as ct
-import odap.Aerodynamics as aero
+import odap.aerodynamics as aero
 
 from .utils import E_to_M, Nu_to_E
 

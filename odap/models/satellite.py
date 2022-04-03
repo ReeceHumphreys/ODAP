@@ -1,5 +1,5 @@
 import numpy as np
-from ..CoordTransforms import coe2rv
+from ..coordinates import coe2rv
 from ..utils import circle_area
 from nasa_sbm.configuration import SatType
 
@@ -46,7 +46,7 @@ class Satellite:
     @property
     def cartesian_state(self):
         if self.r.any() is None or self.v.any() is None:
-            p = self.a * (1 - self.ecc ** 2)
+            p = self.a * (1 - self.ecc**2)
             r, v = coe2rv(
                 mu_Earth,
                 p,

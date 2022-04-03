@@ -46,11 +46,10 @@ class TLE:
         if self._epoch is None:
             year = np.datetime64(self.epoch_year - 1970, "Y")
             day = np.timedelta64(
-                int((self.epoch_day - 1) * 86400 * 10 ** 6), "us"
+                int((self.epoch_day - 1) * 86400 * 10**6), "us"
             )
             self._epoch = year + day
         return self._epoch
-
 
     @property
     def a(self):
@@ -63,7 +62,9 @@ class TLE:
             The semi-major axis of the satellite specified by the tle. Unit: [km]
         """
         if self._a is None:
-            self._a = mu_Earth**(1/3) / ((2 * self.n * np.pi)/ 86400)**(2/3)
+            self._a = mu_Earth ** (1 / 3) / ((2 * self.n * np.pi) / 86400) ** (
+                2 / 3
+            )
         return self._a
 
     @property
