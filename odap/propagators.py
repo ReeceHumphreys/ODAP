@@ -190,12 +190,12 @@ class OrbitPropagator:
     # Performing a Keplerian propagation, i.e. w/o perturbations
     def propagate_orbit(self):
 
-        a0 = self.inital_state[:, 0]
-        e0 = self.inital_state[:, 1]
-        i0 = self.inital_state[:, 2]
-        Omega0 = self.inital_state[:, 3]
-        omega0 = self.inital_state[:, 4]
-        nu0 = self.inital_state[:, 5]
+        a0: np.ndarray = self.inital_state[:, 0]
+        e0: np.ndarray = self.inital_state[:, 1]
+        i0: np.ndarray = self.inital_state[:, 2]
+        Omega0: np.ndarray = self.inital_state[:, 3]
+        omega0: np.ndarray = self.inital_state[:, 4]
+        nu0: np.ndarray = self.inital_state[:, 5]
 
         times = np.arange(self.tspan[0], self.tspan[-1], self.dt)
 

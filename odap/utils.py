@@ -14,6 +14,8 @@ from numpy import sqrt
  * @return the transformed x following the power law distribution
 */
 """
+
+
 def power_law(x0, x1, n, y):
     step = pow(x1, n + 1) - pow(x0, n + 1) * y + pow(x0, n + 1)
     return pow(step, 1 / (n + 1))
@@ -26,14 +28,17 @@ def _kepler_equation(E, M, ecc):
 def _kepler_equation_prime(E, M, ecc):
     return 1 - ecc * np.cos(E)
 
+
 @jit
 def norm(arr):
     return np.sqrt(arr @ arr)
+
 
 @jit
 def E_to_M(E, ecc):
     M = E - ecc * np.sin(E)
     return M
+
 
 @jit
 def E_to_nu(E, ecc):
@@ -57,6 +62,7 @@ def E_to_nu(E, ecc):
     nu = 2 * np.arctan(np.sqrt((1 + ecc) / (1 - ecc)) * np.tan(E / 2))
     return nu
 
+
 @jit
 def F_to_nu(F, ecc):
     r"""True anomaly from hyperbolic anomaly.
@@ -74,6 +80,7 @@ def F_to_nu(F, ecc):
     nu = 2 * np.arctan(np.sqrt((ecc + 1) / (ecc - 1)) * np.tanh(F / 2))
     return nu
 
+
 def _M_to_nu(M, ecc):
     E = M_to_E(M, ecc)
     nu = 2 * np.arctan(np.sqrt((1 + ecc) / (1 - ecc)) * np.tan(E / 2))
@@ -88,6 +95,8 @@ def M_to_E(M, ecc):
     E = _newton_elliptic(E0, args=(M, ecc))
     return E
 
+
+@jit
 def Nu_to_E(nu, ecc):
     r"""Eccentric anomaly from true anomaly.
     .. versionadded:: 0.4.0
@@ -117,7 +126,6 @@ def Nu_to_E(nu, ecc):
 
 
 def newton_factory(func, fprime):
-
     def jit_newton_wrapper(x0, args=(), tol=1.48e-08, maxiter=50):
         p0 = float(x0)
         for _ in range(maxiter):
@@ -135,6 +143,7 @@ def newton_factory(func, fprime):
 
 
 _newton_elliptic = newton_factory(_kepler_equation, _kepler_equation_prime)
+
 
 def circle_area(characteristic_length):
     radius = characteristic_length / 2
