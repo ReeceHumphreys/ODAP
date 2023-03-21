@@ -21,7 +21,7 @@ fonttools==4.31.2
 idna==3.3
 ipykernel==6.12.1
 ipympl==0.8.8
-ipython==8.2.0
+ipython==8.10.0
 ipython-genutils==0.2.0
 ipywidgets==7.7.0
 jedi==0.18.1
