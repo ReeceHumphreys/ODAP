@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "odap"
+version = "0.1.0"
+description = "An implementation of the NASA Standard Breakup Model in Python with associated tools and demonstrations."
+authors = ["Reece Humphreys <reecewh@icloud.com>"]
+readme = "README.md"
+license = "LICENSE"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+numpy = ">=1.21,<1.25"
+numba = "^0.57.1"
+scipy = "^1.11.2"
+pandas = "^2.0.3"
+ipykernel = "^6.25.1"
+chart-studio = "^1.1.0"
+
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
