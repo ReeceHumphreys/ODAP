@@ -1,7 +1,6 @@
 import numpy as np
 from ..coordinates import coe2rv
 from ..utils import circle_area
-from nasa_sbm.configuration import SatType
 
 # kg
 DEFAULT_MASS = 1000.0
@@ -15,7 +14,7 @@ class Satellite:
     # All satellites should have orbital elements.
     # Then the carteisan state is constructed if needed
 
-    def __init__(self, tle, mass=DEFAULT_MASS, type=SatType.soc):
+    def __init__(self, tle, mass=DEFAULT_MASS):
         """
         Constructs all the necessary attributes for the satellite object from a TLE.
 
