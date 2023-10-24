@@ -196,20 +196,17 @@ class OrbitPropagator:
     # Performing a Keplerian propagation, i.e. w/o perturbations
     def propagate_orbit(self):
 
-        a0: np.ndarray = self.inital_state[:, 0]
-        e0: np.ndarray = self.inital_state[:, 1]
-        i0: np.ndarray = self.inital_state[:, 2]
-        Omega0: np.ndarray = self.inital_state[:, 3]
-        omega0: np.ndarray = self.inital_state[:, 4]
-        nu0: np.ndarray = self.inital_state[:, 5]
+        a0: np.ndarray = self.inital_state[:, 0] # [km]
+        e0: np.ndarray = self.inital_state[:, 1] #[]
+        nu0: np.ndarray = self.inital_state[:, 5] #[rad]
 
         times = np.arange(self.tspan[0], self.tspan[-1], self.dt)
 
         # # Mean anomaly rate of change
-        n = sqrt(self.cb["mu"] / a0**3)
+        n = sqrt(self.cb["mu"] / (a0*1e3)**3)
 
         # Mean anomaly over time
-        M0 = E_to_M(Nu_to_E(nu0, e0), e0) % 2 * np.pi
+        M0 = (E_to_M(Nu_to_E(nu0, e0), e0) % (2 * np.pi))
         M_dt = n[None, :] * times[:, None]
         M_t = M0 + M_dt
         M_t = np.deg2rad(np.rad2deg(np.mod(M_t, 2 * pi)))
