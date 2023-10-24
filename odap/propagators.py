@@ -6,7 +6,7 @@ from scipy.special import iv
 
 # User defined libearayr
 import data.planetary_data as pd
-import odap.aerodynamics as aero
+from . import aerodynamics as aero
 
 from .utils import E_to_M, Nu_to_E
 
@@ -101,7 +101,9 @@ class OrbitPropagator:
 
         ############### Drag effects ###############
         if self.perts["aero"]:
-            h_p = peri - radius  # [m]
+
+            h_p = peri*1e3 - radius  # [m]
+
             rho = aero.atmosphere_density(h_p / 1e3)  # [kg * m^-3]
             H = aero.scale_height(h_p / 1e3) * 1e3  # [m]
 
@@ -123,6 +125,7 @@ class OrbitPropagator:
 
             # CASE e>= 0.001
             I = e >= 0.001
+
             trunc_err_a = (
                 a[I] ** 2 * rho[I] * np.exp(-z[I]) * iv(0, z[I]) * e[I] ** 6
             )
@@ -164,11 +167,14 @@ class OrbitPropagator:
     def propagate_perturbations(self):
 
         # Initial states
-        a0, e0, i0, Omega0, omega0 = self.inital_state[5, :]
+        a0: np.ndarray = self.inital_state[:, 0]
+        e0: np.ndarray = self.inital_state[:, 1]
+        i0: np.ndarray = self.inital_state[:, 2]
+        Omega0: np.ndarray = self.inital_state[:, 3]
+        omega0: np.ndarray = self.inital_state[:, 4]
         y0 = np.concatenate((e0, a0, i0, Omega0, omega0))
 
         # Propagation time
-        T_avg = np.mean(self.inital_state[-1, 8, :])
         times = np.arange(self.tspan[0], self.tspan[-1], self.dt)
         output = integrate.solve_ivp(
             self.diffy_q, self.tspan, y0, t_eval=times
@@ -177,10 +183,10 @@ class OrbitPropagator:
         # Unpacking output (Need to drop first timestep as sudden introduction of drag causes discontinuities)
         N_f = len(self.A)
         de = output.y[0:N_f, 1:]
-        da = output.y[N_f : 2 * N_f, 1:]
-        di = output.y[2 * N_f : 3 * N_f, 1:]
-        dOmega = output.y[3 * N_f : 4 * N_f, 1:]
-        domega = output.y[4 * N_f :, 1:]
+        da = output.y[N_f: 2 * N_f, 1:]
+        di = output.y[2 * N_f: 3 * N_f, 1:]
+        dOmega = output.y[3 * N_f: 4 * N_f, 1:]
+        domega = output.y[4 * N_f:, 1:]
         dnu = np.random.uniform(low=0.0, high=360.0, size=domega.shape)
         dp = da * (1 - de**2)
 
@@ -190,20 +196,17 @@ class OrbitPropagator:
     # Performing a Keplerian propagation, i.e. w/o perturbations
     def propagate_orbit(self):
 
-        a0: np.ndarray = self.inital_state[:, 0]
-        e0: np.ndarray = self.inital_state[:, 1]
-        i0: np.ndarray = self.inital_state[:, 2]
-        Omega0: np.ndarray = self.inital_state[:, 3]
-        omega0: np.ndarray = self.inital_state[:, 4]
-        nu0: np.ndarray = self.inital_state[:, 5]
+        a0: np.ndarray = self.inital_state[:, 0] # [km]
+        e0: np.ndarray = self.inital_state[:, 1] #[]
+        nu0: np.ndarray = self.inital_state[:, 5] #[rad]
 
         times = np.arange(self.tspan[0], self.tspan[-1], self.dt)
 
         # # Mean anomaly rate of change
-        n = sqrt(self.cb["mu"] / a0**3)
+        n = sqrt(self.cb["mu"] / (a0*1e3)**3)
 
         # Mean anomaly over time
-        M0 = E_to_M(Nu_to_E(nu0, e0), e0) % 2 * np.pi
+        M0 = (E_to_M(Nu_to_E(nu0, e0), e0) % (2 * np.pi))
         M_dt = n[None, :] * times[:, None]
         M_t = M0 + M_dt
         M_t = np.deg2rad(np.rad2deg(np.mod(M_t, 2 * pi)))
